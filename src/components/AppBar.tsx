@@ -244,7 +244,7 @@ export const AppBar: React.FC<AppBarProps> = ({
           font-weight: 600;
           background: transparent;
           border: none;
-          transition: all 0.2s ease;
+          transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
           cursor: pointer;
         }
 

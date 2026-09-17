@@ -36,21 +36,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onGoToHistoryTab,
 }) => {
   // User switch animation state
-  const [logoRotation, setLogoRotation] = useState<number>(0);
   const [isSwitching, setIsSwitching] = useState<boolean>(false);
+  const [isExiting, setIsExiting] = useState<boolean>(false);
 
   const handleToggleUser = () => {
-    setLogoRotation((prev) => prev + 360);
+    if (isSwitching) return;
     setIsSwitching(true);
+    setIsExiting(true);
+
     const nextUser = activeUser.id === 'sejal' ? 'bhaumik' : 'sejal';
-    onSwitchUser(nextUser);
+
+    // Phase 1: Soft dissolve out current state (220ms)
+    setTimeout(() => {
+      onSwitchUser(nextUser);
+      setIsExiting(false);
+    }, 220);
+
+    // Phase 2: Complete bloom and settled transition (900ms)
     setTimeout(() => {
       setIsSwitching(false);
-    }, 450);
+    }, 900);
   };
 
   // Calculate exercises remaining in today's routine
-  const totalExercises = currentRoutine.exercises.length;
+  const totalExercises = currentRoutine?.exercises?.length || 0;
   const completedCount = completedExerciseIds.length;
   const exercisesLeft = Math.max(0, totalExercises - completedCount);
   const isWorkoutInProgress = isSessionActive || completedCount > 0;
@@ -188,14 +197,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             title={`Active: ${activeUser.name}. Click to switch athlete.`}
             aria-label={`Switch profile from ${activeUser.name}`}
           >
-            <div
-              className="brand-logo-avatar"
-              style={{
-                transform: `rotate(${logoRotation}deg)`,
-              }}
-            >
+            <div className="brand-logo-avatar">
               <Image
-                src="/logo-gradient.png"
+                src="/logo-cosmic.png"
                 alt="Aura Logo"
                 width={34}
                 height={34}
@@ -203,13 +207,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="logo-img"
               />
             </div>
-            {isSwitching && <span className="logo-ripple-pulse" />}
           </button>
 
           <div className="greeting-text-block">
             <span className="welcome-subtitle">WELCOME,</span>
             <div className="athlete-name-row" key={activeUser.id}>
-              <h1 className="athlete-name animate-user-in">{activeUser.name} !</h1>
+              <h1 className={`athlete-name ${isExiting ? 'fade-out' : 'animate-user-in'}`}>{activeUser.name} !</h1>
             </div>
           </div>
         </div>
@@ -217,7 +220,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. "Workout Progress" Banner Card (Deep Charcoal Hero Card) */}
       <section
-        className="workout-progress-card animate-card-fade"
+        className={`workout-progress-card ${isExiting ? 'card-fade-out' : 'animate-card-fade'}`}
         key={`workout-${activeUser.id}`}
         onClick={onStartWorkout}
         role="button"
@@ -267,7 +270,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {hasActivityToday ? (
-          <div className="activity-card-container animate-card-fade" key={`activity-${activeUser.id}`}>
+          <div className={`activity-card-container ${isExiting ? 'card-fade-out' : 'animate-card-fade-stagger'}`} key={`activity-${activeUser.id}`}>
             {/* Top: Rose-Crimson Full-Width Calorie Card with Overhead Lifter & Waves */}
             <div className="calorie-rose-card">
               {/* Top Weightlifter Icon in Translucent Glass Circle */}
@@ -379,7 +382,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="no-activity-card animate-card-fade" key={`no-activity-${activeUser.id}`}>
+          <div className={`no-activity-card ${isExiting ? 'card-fade-out' : 'animate-card-fade-stagger'}`} key={`no-activity-${activeUser.id}`}>
             <div className="no-activity-icon-bubble">
               <Activity size={28} strokeWidth={2.2} className="no-activity-icon" />
             </div>
@@ -441,8 +444,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-          will-change: transform;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+          will-change: transform, filter;
         }
 
         .avatar-btn:hover .brand-logo-avatar {
@@ -450,29 +453,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         .avatar-btn:active .brand-logo-avatar {
-          transform: scale(0.9);
+          transform: scale(0.92);
+          transition: transform 0.12s ease;
         }
 
-        .logo-ripple-pulse {
-          position: absolute;
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          border: 1.5px solid rgba(99, 102, 241, 0.6);
-          animation: logoPulseOut 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          pointer-events: none;
+        /* Tactile Breathing Bloom instead of 360 Spin */
+        .avatar-btn.switching .brand-logo-avatar {
+          animation: logoBloom 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes logoPulseOut {
+        @keyframes logoBloom {
           0% {
-            transform: scale(0.85);
-            opacity: 1;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+            transform: scale(1);
+            filter: brightness(1);
+          }
+          30% {
+            transform: scale(0.88);
+            filter: brightness(1.15);
+          }
+          65% {
+            transform: scale(1.08);
+            filter: brightness(1.2);
           }
           100% {
-            transform: scale(1.7);
-            opacity: 0;
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0);
+            transform: scale(1);
+            filter: brightness(1);
           }
         }
 
@@ -481,16 +486,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           align-items: center;
         }
 
+        .athlete-name.fade-out {
+          opacity: 0;
+          transform: translateY(6px);
+          filter: blur(4px);
+          transition: all 0.22s cubic-bezier(0.4, 0, 1, 1);
+        }
+
         .animate-user-in {
-          animation: userSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          will-change: transform, opacity;
+          animation: userSlideIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: transform, opacity, filter;
         }
 
         @keyframes userSlideIn {
           0% {
             opacity: 0;
-            transform: translateY(-8px) scale(0.95);
-            filter: blur(4px);
+            transform: translateY(-8px) scale(0.96);
+            filter: blur(6px);
           }
           100% {
             opacity: 1;
@@ -499,14 +511,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           }
         }
 
+        .card-fade-out {
+          opacity: 0.35;
+          transform: scale(0.985);
+          filter: blur(2px);
+          transition: all 0.22s cubic-bezier(0.4, 0, 1, 1);
+        }
+
         .animate-card-fade {
-          animation: cardFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: cardFadeIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: transform, opacity;
+        }
+
+        .animate-card-fade-stagger {
+          animation: cardFadeIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+          will-change: transform, opacity;
         }
 
         @keyframes cardFadeIn {
           0% {
-            opacity: 0.55;
-            transform: translateY(4px);
+            opacity: 0.2;
+            transform: translateY(10px);
           }
           100% {
             opacity: 1;

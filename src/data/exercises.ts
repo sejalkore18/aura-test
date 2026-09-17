@@ -66,6 +66,28 @@ export const EXERCISE_LIBRARY: Exercise[] = [
     variations: ['Incline Barbell Bench Press', 'Dumbbell Bench Press', 'Close Grip Bench Press']
   },
   {
+    id: 'dumbbell-bench',
+    name: 'Dumbbell Bench',
+    category: 'chest',
+    videoUrl: 'https://app.fitnessai.com/exercises/02891201-Dumbbell-Bench-Press-Chest.mp4',
+    thumbnailUrl: 'https://cdn.prod.website-files.com/5c34b1d990599d5d94b3e8d8/5fd18fd4f64b2814996e0d0d_02891201-Dumbbell-Bench-Press-Chest.jpeg',
+    defaultSets: 3,
+    defaultReps: 10,
+    defaultWeightKg: 20,
+    equipment: 'Dumbbells & Flat Bench',
+    proTip: 'If you want to emphasize your triceps more, tuck your elbows in. Leave them flared out to focus more on your chest.',
+    howTo: [
+      'Lie flat on the bench so that your head, upper back, lower back, and both feet are firmly pressed against the bench and ground at all points while holding two dumbbells at shoulder level with an overhand grip.',
+      'Exhale and push both of your hands up and towards each other.',
+      'Exhale as you squeeze your chest and push the dumbbells up until your arms are fully extended.',
+      'Continue pushing until your arms are fully extended and just before the dumbbells meet.',
+      'Inhale and return the dumbbells back down to the starting position.'
+    ],
+    primaryMuscles: ['Chest (Pectoralis Major)', 'Lower Chest', 'Upper Chest'],
+    secondaryMuscles: ['Front Shoulder (Anterior Deltoids)', 'Triceps Brachii'],
+    variations: ['Incline Dumbbell Press', 'Decline Dumbbell Bench Press', 'Close Grip Dumbbell Bench Press']
+  },
+  {
     id: 'dumbbell-flyes',
     name: 'Dumbbell Flyes',
     category: 'chest',
@@ -216,10 +238,11 @@ export const EXERCISE_LIBRARY: Exercise[] = [
 
 export const DEFAULT_ROUTINES: WorkoutRoutine[] = [
   {
-    id: 'chest-triceps-day',
-    title: "It's Chest & Triceps Day",
-    subtitle: 'High-intensity upper body push split',
-    estimatedMinutes: 30,
+    id: 'upper-body',
+    title: 'Upper Body',
+    subtitle: 'Chest, Triceps, Shoulders & Push power',
+    coverImage: '/workouts/upper-body.jpg',
+    estimatedMinutes: 25,
     exercises: [
       {
         exerciseId: 'push-ups',
@@ -253,96 +276,15 @@ export const DEFAULT_ROUTINES: WorkoutRoutine[] = [
           { setNumber: 2, targetReps: 12, actualReps: 12, weightKg: 60, completed: false },
           { setNumber: 3, targetReps: 12, actualReps: 12, weightKg: 60, completed: false }
         ]
-      },
-      {
-        exerciseId: 'dumbbell-flyes',
-        targetSets: 3,
-        targetReps: 12,
-        targetWeightKg: 14,
-        sets: [
-          { setNumber: 1, targetReps: 12, actualReps: 12, weightKg: 14, completed: false },
-          { setNumber: 2, targetReps: 12, actualReps: 12, weightKg: 14, completed: false },
-          { setNumber: 3, targetReps: 12, actualReps: 12, weightKg: 14, completed: false }
-        ]
       }
     ]
   },
   {
-    id: 'machine-hypertrophy',
-    title: "It's Machine & Dips Day",
-    subtitle: 'Controlled isolation and maximum pump',
-    estimatedMinutes: 30,
-    exercises: [
-      {
-        exerciseId: 'chest-press-machine',
-        targetSets: 3,
-        targetReps: 10,
-        targetWeightKg: 45,
-        sets: [
-          { setNumber: 1, targetReps: 10, actualReps: 10, weightKg: 45, completed: false },
-          { setNumber: 2, targetReps: 10, actualReps: 10, weightKg: 45, completed: false },
-          { setNumber: 3, targetReps: 10, actualReps: 10, weightKg: 45, completed: false }
-        ]
-      },
-      {
-        exerciseId: 'chest-dips',
-        targetSets: 3,
-        targetReps: 10,
-        targetWeightKg: 0,
-        sets: [
-          { setNumber: 1, targetReps: 10, actualReps: 10, weightKg: 0, completed: false },
-          { setNumber: 2, targetReps: 10, actualReps: 10, weightKg: 0, completed: false },
-          { setNumber: 3, targetReps: 10, actualReps: 10, weightKg: 0, completed: false }
-        ]
-      },
-      {
-        exerciseId: 'dumbbell-flyes',
-        targetSets: 3,
-        targetReps: 12,
-        targetWeightKg: 14,
-        sets: [
-          { setNumber: 1, targetReps: 12, actualReps: 12, weightKg: 14, completed: false },
-          { setNumber: 2, targetReps: 12, actualReps: 12, weightKg: 14, completed: false },
-          { setNumber: 3, targetReps: 12, actualReps: 12, weightKg: 14, completed: false }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'back-pull-day',
-    title: "It's Back & Strength Day",
-    subtitle: 'Compound pulling and posterior chain focus',
+    id: 'lower-body',
+    title: 'Lower Body',
+    subtitle: 'Quads, Hamstrings, Glutes & Core power',
+    coverImage: '/workouts/lower-body.jpg',
     estimatedMinutes: 35,
-    exercises: [
-      {
-        exerciseId: 'pull-ups',
-        targetSets: 3,
-        targetReps: 8,
-        targetWeightKg: 0,
-        sets: [
-          { setNumber: 1, targetReps: 8, actualReps: 8, weightKg: 0, completed: false },
-          { setNumber: 2, targetReps: 8, actualReps: 8, weightKg: 0, completed: false },
-          { setNumber: 3, targetReps: 8, actualReps: 8, weightKg: 0, completed: false }
-        ]
-      },
-      {
-        exerciseId: 'barbell-deadlift',
-        targetSets: 3,
-        targetReps: 6,
-        targetWeightKg: 90,
-        sets: [
-          { setNumber: 1, targetReps: 6, actualReps: 6, weightKg: 90, completed: false },
-          { setNumber: 2, targetReps: 6, actualReps: 6, weightKg: 90, completed: false },
-          { setNumber: 3, targetReps: 6, actualReps: 6, weightKg: 90, completed: false }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'leg-power-day',
-    title: "It's Leg Day Power",
-    subtitle: 'Heavy compound quad and glute builders',
-    estimatedMinutes: 40,
     exercises: [
       {
         exerciseId: 'barbell-squat',
@@ -368,9 +310,62 @@ export const DEFAULT_ROUTINES: WorkoutRoutine[] = [
         ]
       }
     ]
+  },
+  {
+    id: 'back-strength',
+    title: 'Back & Strength',
+    subtitle: 'Compound pulling, Lats & Posterior chain',
+    coverImage: '/workouts/full-body.jpg',
+    estimatedMinutes: 30,
+    exercises: [
+      {
+        exerciseId: 'pull-ups',
+        targetSets: 3,
+        targetReps: 8,
+        targetWeightKg: 0,
+        sets: [
+          { setNumber: 1, targetReps: 8, actualReps: 8, weightKg: 0, completed: false },
+          { setNumber: 2, targetReps: 8, actualReps: 8, weightKg: 0, completed: false },
+          { setNumber: 3, targetReps: 8, actualReps: 8, weightKg: 0, completed: false }
+        ]
+      },
+      {
+        exerciseId: 'barbell-deadlift',
+        targetSets: 3,
+        targetReps: 6,
+        targetWeightKg: 90,
+        sets: [
+          { setNumber: 1, targetReps: 6, actualReps: 6, weightKg: 90, completed: false },
+          { setNumber: 2, targetReps: 6, actualReps: 6, weightKg: 90, completed: false },
+          { setNumber: 3, targetReps: 6, actualReps: 6, weightKg: 90, completed: false }
+        ]
+      }
+    ]
   }
 ];
 
 export function getExerciseById(id: string): Exercise | undefined {
   return EXERCISE_LIBRARY.find((ex) => ex.id === id);
+}
+
+export function getRoutineCoverImage(routine: WorkoutRoutine): string {
+  // 1. Primary rule: use the first exercise's image
+  if (routine.exercises && routine.exercises.length > 0) {
+    const firstExId = routine.exercises[0].exerciseId;
+    const firstEx = getExerciseById(firstExId);
+    if (firstEx?.thumbnailUrl) {
+      return firstEx.thumbnailUrl;
+    }
+  }
+
+  // 2. Fallbacks if routine has no exercises yet
+  if (routine.coverImage) return routine.coverImage;
+  const text = `${routine.id} ${routine.title} ${routine.subtitle || ''}`.toLowerCase();
+  if (text.includes('lower') || text.includes('leg') || text.includes('squat')) {
+    return '/workouts/lower-body.jpg';
+  }
+  if (text.includes('upper') || text.includes('chest') || text.includes('push') || text.includes('arm') || text.includes('dip') || text.includes('bench')) {
+    return '/workouts/upper-body.jpg';
+  }
+  return '/workouts/full-body.jpg';
 }

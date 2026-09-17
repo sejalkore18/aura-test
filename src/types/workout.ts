@@ -39,6 +39,7 @@ export interface WorkoutRoutine {
   estimatedMinutes: number;
   exercises: RoutineExercise[];
   isCustom?: boolean;
+  coverImage?: string;
 }
 
 export interface ActiveSession {

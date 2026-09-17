@@ -9,6 +9,7 @@ import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { WorkoutSummaryModal } from '@/components/WorkoutSummaryModal';
 import { HistoryDrawer } from '@/components/HistoryDrawer';
 import { AddExerciseModal } from '@/components/AddExerciseModal';
+import { WorkoutTemplateModal } from '@/components/WorkoutTemplateModal';
 import { AppBar } from '@/components/AppBar';
 import { BottomNavBar, NavTab } from '@/components/BottomNavBar';
 import { ExerciseLibraryView } from '@/components/ExerciseLibraryView';
@@ -60,9 +61,14 @@ export default function HomePage() {
   const [showAddExercise, setShowAddExercise] = useState<boolean>(false);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(INITIAL_WORKOUT_LOGS);
 
+  // Template Modal State (Create / Edit Routine)
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState<boolean>(false);
+  const [templateModalMode, setTemplateModalMode] = useState<'create' | 'edit'>('create');
+  const [templateModalRoutine, setTemplateModalRoutine] = useState<WorkoutRoutine | null>(null);
+
   // Find active routine object
-  const currentRoutine =
-    routines.find((r) => r.id === currentRoutineId) || routines[0];
+  const currentRoutine: WorkoutRoutine =
+    routines.find((r) => r.id === currentRoutineId) || routines[0] || DEFAULT_ROUTINES[0];
 
   // Initialize and load from localStorage
   useEffect(() => {
@@ -163,13 +169,32 @@ export default function HomePage() {
   };
 
   // Start / Resume Workout
-  const handleStartWorkout = () => {
-    if (!isSessionActive) {
+  const handleStartWorkout = (targetRoutineId?: string) => {
+    let activeRoutine = currentRoutine;
+    if (targetRoutineId && targetRoutineId !== currentRoutineId) {
+      const found = routines.find((r) => r.id === targetRoutineId);
+      if (found) {
+        activeRoutine = found;
+        setCurrentRoutineId(targetRoutineId);
+        try {
+          localStorage.setItem('aura_current_routine_id', targetRoutineId);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (!activeRoutine || !activeRoutine.exercises || activeRoutine.exercises.length === 0) {
+      handleOpenCreateTemplate();
+      return;
+    }
+
+    if (!isSessionActive || targetRoutineId) {
       setIsSessionActive(true);
       setSessionStartTime(Date.now());
       // Initialize progress map
       const initialProgress: Record<string, WorkoutSet[]> = {};
-      currentRoutine.exercises.forEach((item) => {
+      activeRoutine.exercises.forEach((item) => {
         initialProgress[item.exerciseId] = Array.from({ length: item.targetSets }, (_, i) => ({
           setNumber: i + 1,
           targetReps: item.targetReps,
@@ -186,9 +211,23 @@ export default function HomePage() {
   };
 
   // Start directly from a specific exercise clicked in overview
-  const handleSelectExerciseToStart = (exerciseIndex: number) => {
-    if (!isSessionActive) {
-      handleStartWorkout();
+  const handleSelectExerciseToStart = (exerciseIndex: number, targetRoutineId?: string) => {
+    let activeRoutine = currentRoutine;
+    if (targetRoutineId && targetRoutineId !== currentRoutineId) {
+      const found = routines.find((r) => r.id === targetRoutineId);
+      if (found) {
+        activeRoutine = found;
+        setCurrentRoutineId(targetRoutineId);
+        try {
+          localStorage.setItem('aura_current_routine_id', targetRoutineId);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (!isSessionActive || targetRoutineId) {
+      handleStartWorkout(targetRoutineId);
     }
     setCurrentExerciseIndex(exerciseIndex);
     setCurrentSetIndex(0);
@@ -396,6 +435,158 @@ export default function HomePage() {
     }
   };
 
+  // Open Create Template Modal
+  const handleOpenCreateTemplate = () => {
+    setTemplateModalMode('create');
+    setTemplateModalRoutine(null);
+    setIsTemplateModalOpen(true);
+  };
+
+  // Open Edit Template Modal
+  const handleOpenEditTemplate = (routineToEdit: WorkoutRoutine) => {
+    setTemplateModalMode('edit');
+    setTemplateModalRoutine(routineToEdit);
+    setIsTemplateModalOpen(true);
+  };
+
+  // Save Routine (Create or Edit)
+  const handleSaveRoutine = (savedRoutine: WorkoutRoutine) => {
+    let updatedRoutines: WorkoutRoutine[];
+    const exists = routines.some((r) => r.id === savedRoutine.id);
+
+    if (exists) {
+      updatedRoutines = routines.map((r) =>
+        r.id === savedRoutine.id ? savedRoutine : r
+      );
+    } else {
+      updatedRoutines = [...routines, savedRoutine];
+    }
+
+    setRoutines(updatedRoutines);
+    setCurrentRoutineId(savedRoutine.id);
+
+    try {
+      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
+      localStorage.setItem('aura_current_routine_id', savedRoutine.id);
+    } catch {
+      // ignore
+    }
+
+    // Reset active session for clean start with the modified routine
+    setIsSessionActive(false);
+    setIsPlayerViewOpen(false);
+    setCurrentExerciseIndex(0);
+    setCurrentSetIndex(0);
+    setExerciseProgress({});
+  };
+
+  // Delete Routine
+  const handleDeleteRoutine = (routineId: string) => {
+    if (routines.length <= 1) {
+      alert('You must have at least one workout routine.');
+      return;
+    }
+
+    const updatedRoutines = routines.filter((r) => r.id !== routineId);
+    setRoutines(updatedRoutines);
+
+    if (currentRoutineId === routineId) {
+      const fallbackId = updatedRoutines[0]?.id || DEFAULT_ROUTINES[0].id;
+      setCurrentRoutineId(fallbackId);
+      try {
+        localStorage.setItem('aura_current_routine_id', fallbackId);
+      } catch {
+        // ignore
+      }
+      setIsSessionActive(false);
+      setIsPlayerViewOpen(false);
+      setCurrentExerciseIndex(0);
+      setCurrentSetIndex(0);
+      setExerciseProgress({});
+    }
+
+    try {
+      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
+    } catch {
+      // ignore
+    }
+
+    setIsTemplateModalOpen(false);
+  };
+
+  // Quick Update Exercise Targets directly from WorkoutOverview
+  const handleUpdateExerciseTargets = (
+    exerciseIndex: number,
+    targetSets: number,
+    targetReps: number,
+    targetWeightKg: number
+  ) => {
+    const exList = [...currentRoutine.exercises];
+    if (!exList[exerciseIndex]) return;
+
+    const item = { ...exList[exerciseIndex] };
+    item.targetSets = targetSets;
+    item.targetReps = targetReps;
+    item.targetWeightKg = targetWeightKg;
+    item.sets = Array.from({ length: targetSets }, (_, i) => ({
+      setNumber: i + 1,
+      targetReps,
+      actualReps: targetReps,
+      weightKg: targetWeightKg,
+      completed: false,
+    }));
+
+    exList[exerciseIndex] = item;
+
+    const updatedRoutine: WorkoutRoutine = {
+      ...currentRoutine,
+      exercises: exList,
+    };
+
+    const updatedRoutines = routines.map((r) =>
+      r.id === currentRoutine.id ? updatedRoutine : r
+    );
+
+    setRoutines(updatedRoutines);
+    try {
+      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
+    } catch {
+      // ignore
+    }
+
+    if (exerciseProgress[item.exerciseId]) {
+      setExerciseProgress((prev) => ({
+        ...prev,
+        [item.exerciseId]: item.sets,
+      }));
+    }
+  };
+
+  // Remove single exercise from current routine
+  const handleRemoveExerciseFromRoutine = (exerciseIndex: number) => {
+    const updatedExercises = currentRoutine.exercises.filter((_, i) => i !== exerciseIndex);
+    const updatedRoutine: WorkoutRoutine = {
+      ...currentRoutine,
+      exercises: updatedExercises,
+    };
+
+    const updatedRoutines = routines.map((r) =>
+      r.id === currentRoutine.id ? updatedRoutine : r
+    );
+
+    setRoutines(updatedRoutines);
+    try {
+      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
+    } catch {
+      // ignore
+    }
+
+    if (currentExerciseIndex >= updatedExercises.length) {
+      setCurrentExerciseIndex(Math.max(0, updatedExercises.length - 1));
+      setCurrentSetIndex(0);
+    }
+  };
+
   // Reset day's workout progress
   const handleResetProgress = () => {
     setIsSessionActive(false);
@@ -410,8 +601,11 @@ export default function HomePage() {
     saveWorkoutLogs([]);
   };
 
-  const currentRoutineExercise = currentRoutine.exercises[currentExerciseIndex] || currentRoutine.exercises[0];
-  const activeExerciseData: Exercise = getExerciseById(currentRoutineExercise?.exerciseId) || EXERCISE_LIBRARY[0];
+  const currentRoutineExercise =
+    currentRoutine?.exercises?.[currentExerciseIndex] || currentRoutine?.exercises?.[0];
+  const activeExerciseData: Exercise = currentRoutineExercise
+    ? getExerciseById(currentRoutineExercise.exerciseId) || EXERCISE_LIBRARY[0]
+    : EXERCISE_LIBRARY[0];
   const activeSets = currentRoutineExercise
     ? getSetsForExercise(
         currentRoutineExercise.exerciseId,
@@ -437,7 +631,7 @@ export default function HomePage() {
       case 'dashboard':
         return 'Dashboard';
       case 'workout':
-        return currentRoutine.title;
+        return 'Workout';
       case 'library':
         return 'Exercise Library';
       case 'history':
@@ -455,7 +649,7 @@ export default function HomePage() {
       case 'dashboard':
         return 'Home Overview';
       case 'workout':
-        return `~${currentRoutine.estimatedMinutes} min`;
+        return undefined;
       case 'library':
         return 'All Movements';
       case 'history':
@@ -477,9 +671,9 @@ export default function HomePage() {
           activeUser={activeUser}
           allUsers={USER_PROFILES}
           onSwitchUser={handleSwitchUser}
-          showUserSwitcher={activeTab !== 'history'}
-          transparentBackButton={activeTab === 'history'}
-          titlePosition={activeTab === 'history' ? 'left' : 'center'}
+          showUserSwitcher={!['history', 'workout'].includes(activeTab) && !isPlayerViewOpen}
+          transparentBackButton={['history', 'workout'].includes(activeTab)}
+          titlePosition={['history', 'workout'].includes(activeTab) ? 'left' : 'center'}
         />
       )}
 
@@ -551,6 +745,11 @@ export default function HomePage() {
                 onResetProgress={handleResetProgress}
                 completedExerciseIds={completedExerciseIds}
                 isSessionActive={isSessionActive}
+                onOpenCreateTemplate={handleOpenCreateTemplate}
+                onOpenEditTemplate={handleOpenEditTemplate}
+                onDeleteRoutine={handleDeleteRoutine}
+                onUpdateExerciseTargets={handleUpdateExerciseTargets}
+                onRemoveExerciseFromRoutine={handleRemoveExerciseFromRoutine}
               />
             )}
 
@@ -640,9 +839,21 @@ export default function HomePage() {
         <AddExerciseModal
           onClose={() => setShowAddExercise(false)}
           onAddExercise={handleAddExerciseToRoutine}
-          existingExerciseIds={currentRoutine.exercises.map((e) => e.exerciseId)}
+          existingExerciseIds={
+            currentRoutine?.exercises ? currentRoutine.exercises.map((e) => e.exerciseId) : []
+          }
         />
       )}
+
+      {/* 8. Workout Template Modal (Create / Modify Routine) */}
+      <WorkoutTemplateModal
+        isOpen={isTemplateModalOpen}
+        mode={templateModalMode}
+        initialRoutine={templateModalRoutine}
+        onClose={() => setIsTemplateModalOpen(false)}
+        onSave={handleSaveRoutine}
+        onDelete={handleDeleteRoutine}
+      />
 
       <style jsx>{`
         .player-viewport {

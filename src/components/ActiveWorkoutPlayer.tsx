@@ -16,6 +16,7 @@ import {
   Dumbbell
 } from 'lucide-react';
 import { Exercise, WorkoutSet, WorkoutRoutine } from '@/types/workout';
+import { getExerciseById } from '@/data/exercises';
 
 interface ActiveWorkoutPlayerProps {
   exercise: Exercise;
@@ -189,9 +190,11 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           <div className="drawer-list">
             {routine.exercises.map((item, idx) => {
               const isCurrent = idx === exerciseIndex;
+              const exData = getExerciseById(item.exerciseId);
+              const exName = exData?.name || item.exerciseId.replace(/-/g, ' ');
               return (
                 <button
-                  key={item.exerciseId}
+                  key={`${item.exerciseId}-${idx}`}
                   className={`drawer-item ${isCurrent ? 'current' : ''}`}
                   onClick={() => {
                     onSelectExercise(idx);
@@ -199,9 +202,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
                   }}
                 >
                   <span className="drawer-item-num">{idx + 1}</span>
-                  <span className="drawer-item-name">
-                    {item.exerciseId.replace(/-/g, ' ')}
-                  </span>
+                  <span className="drawer-item-name">{exName}</span>
                   <span className="drawer-item-sets">
                     {item.targetSets} sets
                   </span>

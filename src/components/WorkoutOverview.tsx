@@ -3,33 +3,41 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import {
-  Clock,
-  Layers,
-  ChevronDown,
-  CheckCircle2,
-  Circle,
-  Info,
-  Play,
-  TrendingUp,
   Plus,
-  RotateCcw,
-  Sparkles
+  Edit3,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
+  Sparkles,
+  Dumbbell,
+  CheckCircle2,
 } from 'lucide-react';
-import { WorkoutRoutine, RoutineExercise, Exercise, UserProfile } from '@/types/workout';
-import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
+import { WorkoutRoutine, RoutineExercise, Exercise } from '@/types/workout';
+import { getExerciseById, getRoutineCoverImage } from '@/data/exercises';
 
 interface WorkoutOverviewProps {
   routine: WorkoutRoutine;
   allRoutines: WorkoutRoutine[];
   onSelectRoutine: (routineId: string) => void;
-  onStartWorkout: () => void;
-  onSelectExerciseToStart: (exerciseIndex: number) => void;
-  onOpenExerciseDetails: (exercise: Exercise) => void;
-  onOpenHistory: () => void;
-  onOpenAddExercise: () => void;
-  onResetProgress: () => void;
+  onStartWorkout: (routineId?: string) => void;
+  onSelectExerciseToStart: (exerciseIndex: number, routineId?: string) => void;
+  onOpenExerciseDetails?: (exercise: Exercise) => void;
+  onOpenHistory?: () => void;
+  onOpenAddExercise?: () => void;
+  onResetProgress?: () => void;
   completedExerciseIds: string[];
   isSessionActive: boolean;
+  onOpenCreateTemplate: () => void;
+  onOpenEditTemplate: (routine: WorkoutRoutine) => void;
+  onDeleteRoutine: (routineId: string) => void;
+  onUpdateExerciseTargets?: (
+    exerciseIndex: number,
+    targetSets: number,
+    targetReps: number,
+    targetWeightKg: number
+  ) => void;
+  onRemoveExerciseFromRoutine?: (exerciseIndex: number) => void;
 }
 
 export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
@@ -40,559 +48,641 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   onSelectExerciseToStart,
   onOpenExerciseDetails,
   onOpenHistory,
-  onOpenAddExercise,
-  onResetProgress,
-  completedExerciseIds,
   isSessionActive,
+  onOpenCreateTemplate,
+  onOpenEditTemplate,
+  onDeleteRoutine,
 }) => {
-  const [showRoutineDropdown, setShowRoutineDropdown] = useState(false);
+  // Track expanded template cards to preview exercises
+  const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(null);
 
-  const totalExercises = routine.exercises.length;
-  const completedCount = completedExerciseIds.length;
-  const isAllCompleted = totalExercises > 0 && completedCount === totalExercises;
+  const toggleExpand = (routineId: string) => {
+    setExpandedRoutineId((prev) => (prev === routineId ? null : routineId));
+  };
 
   return (
-    <div className="overview-view animate-fade-in">
-      {/* Top Header Section */}
-      <header className="header-section">
-        {/* Routine Title with Switcher */}
-        <div className="title-container">
-          <button
-            className="title-selector-btn"
-            onClick={() => setShowRoutineDropdown(!showRoutineDropdown)}
-            aria-expanded={showRoutineDropdown}
-          >
-            <h1 className="routine-title">{routine.title}</h1>
-            <ChevronDown
-              size={22}
-              className={`chevron-icon ${showRoutineDropdown ? 'rotated' : ''}`}
-            />
+    <div className="templates-view animate-fade-in">
+      {/* Top Action Bar */}
+      {allRoutines.length > 0 && (
+        <div className="top-action-bar">
+          <button className="aux-btn-primary" onClick={onOpenCreateTemplate}>
+            <Plus size={16} />
+            <span>New Workout</span>
           </button>
-
-          {/* Routine Dropdown Menu */}
-          {showRoutineDropdown && (
-            <div className="routine-dropdown-sheet animate-slide-up">
-              <div className="dropdown-header">
-                <span>Select Workout Routine</span>
-                <button
-                  className="close-dropdown-btn"
-                  onClick={() => setShowRoutineDropdown(false)}
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="dropdown-list">
-                {allRoutines.map((r) => {
-                  const isSelected = r.id === routine.id;
-                  return (
-                    <button
-                      key={r.id}
-                      className={`dropdown-item ${isSelected ? 'selected' : ''}`}
-                      onClick={() => {
-                        onSelectRoutine(r.id);
-                        setShowRoutineDropdown(false);
-                      }}
-                    >
-                      <div className="item-text">
-                        <span className="item-title">{r.title}</span>
-                        <span className="item-meta">
-                          {r.exercises.length} exercises · ~{r.estimatedMinutes} min
-                        </span>
-                      </div>
-                      {isSelected && <CheckCircle2 size={18} className="text-green" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
+      )}
 
-        {/* Stats Pill Badges */}
-        <div className="stats-row">
-          <div className="stat-pill">
-            <Clock size={14} />
-            <span>~{routine.estimatedMinutes} min</span>
-          </div>
-          <div className="stat-pill">
-            <Layers size={14} />
-            <span>{totalExercises} exercises</span>
-          </div>
-          {completedCount > 0 && (
-            <div className="stat-pill progress-stat">
-              <span className="dot-green" />
-              <span>
-                {completedCount}/{totalExercises} Done
-              </span>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Exercise List */}
-      <div className="exercise-list-container">
-        <div className="exercise-list">
-          {routine.exercises.map((item: RoutineExercise, index: number) => {
-            const exercise = getExerciseById(item.exerciseId);
-            if (!exercise) return null;
-
-            const isCompleted = completedExerciseIds.includes(item.exerciseId);
-
-            return (
-              <div
-                key={`${item.exerciseId}-${index}`}
-                className={`exercise-card ${isCompleted ? 'is-completed' : ''}`}
-              >
-                {/* Thumbnail */}
-                <div
-                  className="thumbnail-wrapper"
-                  onClick={() => onSelectExerciseToStart(index)}
-                  title="Start this exercise"
-                >
-                  <Image
-                    src={exercise.thumbnailUrl}
-                    alt={exercise.name}
-                    width={90}
-                    height={64}
-                    className="thumbnail-img"
-                    unoptimized
-                  />
-                  <div className="play-overlay">
-                    <Play size={16} fill="#ffffff" color="#ffffff" />
-                  </div>
-                </div>
-
-                {/* Text Info */}
-                <div
-                  className="exercise-info"
-                  onClick={() => onSelectExerciseToStart(index)}
-                >
-                  <div className="name-row">
-                    <h2 className="exercise-name">{exercise.name}</h2>
-                  </div>
-                  <div className="exercise-meta">
-                    <span>
-                      {item.targetSets} sets · {item.targetReps} reps
-                    </span>
-                    {item.targetWeightKg > 0 && (
-                      <span className="weight-tag">{item.targetWeightKg} kg</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Quick Actions: Info Guide & Checkmark */}
-                <div className="exercise-actions">
-                  <button
-                    className="info-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenExerciseDetails(exercise);
-                    }}
-                    title="View exercise form guide & tips"
-                  >
-                    <Info size={18} />
-                  </button>
-
-                  <button
-                    className="status-check-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectExerciseToStart(index);
-                    }}
-                    title={isCompleted ? 'Completed' : 'Tap to start'}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle2 size={24} className="check-icon-active" />
-                    ) : (
-                      <Circle size={24} className="check-icon-idle" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Auxiliary Controls (Add Exercise, Reset) */}
-        <div className="aux-buttons-row">
-          <button className="aux-btn" onClick={onOpenAddExercise}>
-            <Plus size={15} />
-            <span>Add Exercise</span>
-          </button>
-          <button className="aux-btn" onClick={onOpenHistory}>
-            <TrendingUp size={15} />
-            <span>Progress & Logs</span>
-          </button>
-          {completedCount > 0 && (
-            <button className="aux-btn text-muted" onClick={onResetProgress}>
-              <RotateCcw size={14} />
-              <span>Reset</span>
+      {/* Templates List */}
+      <div className="templates-list-container">
+        {allRoutines.length === 0 ? (
+          <div className="empty-templates-card">
+            <Dumbbell size={40} className="empty-icon" />
+            <h3>No Workout Templates</h3>
+            <p>Create your first workout template to start training.</p>
+            <button className="btn-primary-pill" onClick={onOpenCreateTemplate}>
+              <Plus size={16} />
+              <span>Create Workout Template</span>
             </button>
-          )}
-        </div>
-      </div>
+          </div>
+        ) : (
+          <div className="templates-cards-grid">
+            {allRoutines.map((r) => {
+              const isCurrent = r.id === routine.id;
+              const coverImg = getRoutineCoverImage(r);
+              const isExpanded = expandedRoutineId === r.id;
+              const totalMovements = r.exercises?.length || 0;
 
-      {/* Bottom Sticky Action Button (Matching Reference) */}
-      <div className="bottom-action-container">
-        <button
-          className="btn-primary-pill start-workout-btn"
-          onClick={onStartWorkout}
-        >
-          {isAllCompleted ? (
-            <>
-              <Sparkles size={18} />
-              <span>Workout Completed · Redo</span>
-            </>
-          ) : isSessionActive ? (
-            <>
-              <Play size={18} fill="#09090b" />
-              <span>Resume Workout</span>
-            </>
-          ) : (
-            <span>Start Workout</span>
-          )}
-        </button>
+              return (
+                <div
+                  key={r.id}
+                  className={`template-card ${isCurrent ? 'is-active-template' : ''}`}
+                  onClick={() => {
+                    onSelectRoutine(r.id);
+                    onStartWorkout(r.id);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectRoutine(r.id);
+                      onStartWorkout(r.id);
+                    }
+                  }}
+                >
+                  {/* Hero Cover Banner with Image */}
+                  <div className="card-banner">
+                    <Image
+                      src={coverImg}
+                      alt={r.title}
+                      fill
+                      className="banner-image"
+                      unoptimized
+                      priority={r.id === 'upper-body' || r.id === 'lower-body'}
+                    />
+                    <div className="banner-scrim" />
+
+                    {/* Floating Top Badges */}
+                    <div className="banner-top-badges">
+                      <div className="stat-pill-blur">
+                        <span>~{r.estimatedMinutes} min</span>
+                      </div>
+                    </div>
+
+                    {/* Banner Titles */}
+                    <div className="banner-titles">
+                      <h2 className="template-title">{r.title}</h2>
+                    </div>
+                  </div>
+
+                  {/* Movements Bar: clicking entire tile expands and collapses */}
+                  <div
+                    className="movements-preview-bar"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (totalMovements > 0) {
+                        toggleExpand(r.id);
+                      }
+                    }}
+                    role={totalMovements > 0 ? 'button' : undefined}
+                    tabIndex={totalMovements > 0 ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (totalMovements > 0 && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleExpand(r.id);
+                      }
+                    }}
+                  >
+                    {totalMovements > 0 ? (
+                      <div className="btn-toggle-movements">
+                        <span>{totalMovements} EXERCISE{totalMovements === 1 ? '' : 'S'}</span>
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </div>
+                    ) : (
+                      <div className="empty-movements-row">
+                        <span className="no-movements-text">0 EXERCISES</span>
+                        <div className="card-actions-inline">
+                          <button
+                            className="btn-card-action"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenEditTemplate(r);
+                            }}
+                            title="Modify workout template"
+                          >
+                            <Edit3 size={13} />
+                          </button>
+                          {allRoutines.length > 1 && (
+                            <button
+                              className="btn-card-action btn-delete-action"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`Delete workout template "${r.title}"?`)) {
+                                  onDeleteRoutine(r.id);
+                                }
+                              }}
+                              title="Delete template"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Expandable Exercise Sequence List */}
+                  {isExpanded && (
+                    <div
+                      className="expanded-exercises-list animate-slide-up"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {r.exercises.map((item, idx) => {
+                        const ex = getExerciseById(item.exerciseId);
+                        const exName = ex?.name || item.exerciseId;
+                        return (
+                          <div
+                            key={`${item.exerciseId}-${idx}`}
+                            className="expanded-exercise-row"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectRoutine(r.id);
+                              onSelectExerciseToStart(idx, r.id);
+                            }}
+                          >
+                            {ex?.thumbnailUrl && (
+                              <div className="ex-seq-thumb">
+                                <Image
+                                  src={ex.thumbnailUrl}
+                                  alt={exName}
+                                  width={44}
+                                  height={36}
+                                  className="thumb-img"
+                                  unoptimized
+                                />
+                              </div>
+                            )}
+                            <div className="ex-seq-info">
+                              <span className="ex-seq-name">{exName}</span>
+                              <div className="ex-seq-meta-row">
+                                <span className="ex-seq-meta">
+                                  {item.targetSets} sets × {item.targetReps} reps
+                                </span>
+                                <span
+                                  className={`ex-weight-badge ${
+                                    item.targetWeightKg > 0 ? 'weighted' : 'bodyweight'
+                                  }`}
+                                >
+                                  {item.targetWeightKg > 0
+                                    ? `${item.targetWeightKg} kg`
+                                    : 'Bodyweight'}
+                                </span>
+                              </div>
+                            </div>
+                            <ChevronRight size={14} className="row-chevron" />
+                          </div>
+                        );
+                      })}
+
+                      {/* Actions below exercises list */}
+                      <div className="expanded-footer-bar">
+                        <span className="footer-summary-meta">
+                          {r.exercises.length} movement{r.exercises.length === 1 ? '' : 's'} • ~{r.estimatedMinutes} min
+                        </span>
+                        <div className="footer-action-buttons">
+                          <button
+                            type="button"
+                            className="btn-card-action"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenEditTemplate(r);
+                            }}
+                            title="Modify workout template"
+                            aria-label="Edit template"
+                          >
+                            <Edit3 size={13} />
+                          </button>
+
+                          {allRoutines.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn-card-action btn-delete-action"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`Delete workout template "${r.title}"?`)) {
+                                  onDeleteRoutine(r.id);
+                                }
+                              }}
+                              title="Delete template"
+                              aria-label="Delete template"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <style jsx>{`
-        .overview-view {
+        .templates-view {
           display: flex;
           flex-direction: column;
           flex: 1;
-          padding: 18px 20px 24px;
-          color: #ffffff;
-          position: relative;
-        }
-
-        /* Header Section */
-        .header-section {
-          margin-bottom: 22px;
-        }
-
-        .title-container {
-          position: relative;
-          margin-bottom: 12px;
-        }
-
-        .title-selector-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          text-align: left;
-          padding: 0;
+          padding: 18px 20px 28px;
           color: #ffffff;
         }
 
-        .routine-title {
-          font-size: 1.65rem;
-          font-weight: 700;
-          letter-spacing: -0.02em;
-          color: #ffffff;
-        }
-
-        .chevron-icon {
-          color: var(--text-secondary);
-          transition: transform 0.2s ease;
-        }
-
-        .chevron-icon.rotated {
-          transform: rotate(180deg);
-        }
-
-        /* Routine Dropdown Menu */
-        .routine-dropdown-sheet {
-          position: absolute;
-          top: calc(100% + 8px);
-          left: 0;
-          right: 0;
-          background: #18181e;
-          border: 1px solid var(--border-active);
-          border-radius: var(--radius-md);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85);
-          z-index: 150;
-          padding: 10px;
-          max-height: 280px;
-          overflow-y: auto;
-        }
-
-        .dropdown-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 6px 10px 10px;
-          border-bottom: 1px solid var(--border-subtle);
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .close-dropdown-btn {
-          color: var(--text-muted);
-          font-size: 0.9rem;
-        }
-
-        .dropdown-list {
+        /* Templates List */
+        .templates-list-container {
           display: flex;
           flex-direction: column;
-          gap: 4px;
-          margin-top: 6px;
+          gap: 16px;
         }
 
-        .dropdown-item {
+        .empty-templates-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 40px 20px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px dashed rgba(255, 255, 255, 0.14);
+          border-radius: 24px;
+          gap: 10px;
+        }
+
+        .empty-icon {
+          color: #6b7280;
+          margin-bottom: 4px;
+        }
+
+        .templates-cards-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        /* Template Card */
+        .template-card {
+          background: #14141a;
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          border-radius: 24px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+          transition: all 0.25s ease;
+        }
+
+        .template-card:hover {
+          border-color: rgba(255, 255, 255, 0.18);
+          transform: translateY(-2px);
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+        }
+
+        .template-card.is-active-template {
+          border-color: rgba(59, 130, 246, 0.45);
+          box-shadow: 0 8px 28px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Banner */
+        .card-banner {
+          position: relative;
+          width: 100%;
+          height: 165px;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 14px 16px;
+          overflow: hidden;
+          background: #000000;
+        }
+
+        .banner-image {
+          object-fit: cover;
+          object-position: center;
+          transition: transform 0.4s ease;
+        }
+
+        .template-card:hover .banner-image {
+          transform: scale(1.03);
+        }
+
+        .banner-scrim {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.05) 45%,
+            rgba(18, 18, 24, 0.95) 100%
+          );
+          z-index: 1;
+        }
+
+        .banner-top-badges {
+          position: relative;
+          z-index: 2;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 10px 12px;
-          border-radius: var(--radius-sm);
-          text-align: left;
-          background: transparent;
+          justify-content: flex-end;
+          gap: 6px;
         }
 
-        .dropdown-item:hover {
-          background: rgba(255, 255, 255, 0.07);
+        .stat-pill-blur {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 10px;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(8px);
+          border: none;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #f3f4f6;
         }
 
-        .dropdown-item.selected {
-          background: rgba(255, 255, 255, 0.12);
-        }
-
-        .item-text {
+        .banner-titles {
+          position: relative;
+          z-index: 2;
           display: flex;
           flex-direction: column;
           gap: 2px;
         }
 
-        .item-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #ffffff;
-        }
-
-        .item-meta {
-          font-size: 0.78rem;
-          color: var(--text-muted);
-        }
-
-        .text-green {
-          color: var(--accent-green);
-        }
-
-        /* Stats Row */
-        .stats-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
-        .progress-stat {
-          border-color: rgba(48, 209, 88, 0.3);
-          color: var(--accent-green);
-        }
-
-        .dot-green {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: var(--accent-green);
-          display: inline-block;
-          box-shadow: 0 0 8px var(--accent-green);
-        }
-
-        /* Exercise List */
-        .exercise-list-container {
-          display: flex;
-          flex-direction: column;
-          margin-bottom: 16px;
-        }
-
-        .exercise-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .exercise-card {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 8px 10px 8px 8px;
-          border-radius: 18px;
-          background: rgba(20, 20, 24, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          transition: all 0.2s ease;
-        }
-
-        .exercise-card:hover {
-          background: rgba(30, 30, 36, 0.85);
-          border-color: rgba(255, 255, 255, 0.12);
-          transform: translateY(-1px);
-        }
-
-        .exercise-card.is-completed {
-          opacity: 0.75;
-          border-color: rgba(48, 209, 88, 0.2);
-        }
-
-        /* Thumbnail */
-        .thumbnail-wrapper {
-          position: relative;
-          width: 90px;
-          height: 64px;
-          border-radius: 14px;
-          overflow: hidden;
-          background: #141418;
-          flex-shrink: 0;
-          cursor: pointer;
-        }
-
-        :global(.thumbnail-img) {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform 0.3s ease;
-        }
-
-        .thumbnail-wrapper:hover :global(.thumbnail-img) {
-          transform: scale(1.05);
-        }
-
-        .play-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.35);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-        }
-
-        .thumbnail-wrapper:hover .play-overlay {
-          opacity: 1;
-        }
-
-        /* Exercise Info */
-        .exercise-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          cursor: pointer;
-        }
-
-        .name-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .exercise-name {
-          font-size: 1.02rem;
-          font-weight: 600;
+        .template-title {
+          font-size: 1.35rem;
+          font-weight: 800;
           color: #ffffff;
           letter-spacing: -0.01em;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
         }
 
-        .exercise-meta {
-          font-size: 0.84rem;
-          color: var(--text-secondary);
+        /* Movements Bar */
+        .movements-preview-bar {
           display: flex;
           align-items: center;
-          gap: 8px;
+          justify-content: space-between;
+          padding: 10px 16px;
+          background: transparent;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          cursor: pointer;
+          user-select: none;
+          transition: background 0.15s ease;
         }
 
-        .weight-tag {
-          font-size: 0.74rem;
-          background: rgba(255, 255, 255, 0.08);
-          padding: 2px 7px;
-          border-radius: var(--radius-pill);
-          color: #e4e4e7;
-          border: 1px solid rgba(255, 255, 255, 0.06);
+        .movements-preview-bar:hover {
+          background: rgba(255, 255, 255, 0.03);
         }
 
-        /* Exercise Actions */
-        .exercise-actions {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .info-btn {
-          color: var(--text-muted);
-          padding: 6px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .info-btn:hover {
-          color: #ffffff;
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        .status-check-btn {
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .check-icon-idle {
-          color: rgba(255, 255, 255, 0.2);
-          transition: color 0.2s ease;
-        }
-
-        .check-icon-idle:hover {
-          color: rgba(255, 255, 255, 0.6);
-        }
-
-        .check-icon-active {
-          color: var(--accent-green);
-          filter: drop-shadow(0 0 6px var(--accent-green-glow));
-        }
-
-        /* Auxiliary Buttons */
-        .aux-buttons-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-top: 18px;
-          padding: 4px 0;
-          flex-wrap: wrap;
-        }
-
-        .aux-btn {
+        .btn-toggle-movements {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 14px;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-pill);
-          color: var(--text-secondary);
-          font-size: 0.8rem;
-          font-weight: 500;
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.07em;
+          white-space: nowrap;
+          transition: color 0.15s ease;
         }
 
-        .aux-btn:hover {
-          background: rgba(255, 255, 255, 0.12);
+        .movements-preview-bar:hover .btn-toggle-movements {
           color: #ffffff;
         }
 
-        /* Bottom Action Button */
-        .bottom-action-container {
-          position: relative;
-          margin-top: 24px;
-          padding-bottom: 24px;
-          z-index: 10;
+        /* Expanded Exercises List */
+        .expanded-exercises-list {
+          padding: 12px 14px 14px 14px;
+          background: rgba(0, 0, 0, 0.35);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .start-workout-btn {
+        .empty-movements-row {
           width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .expanded-exercise-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 8px 12px;
+          background: rgba(255, 255, 255, 0.035);
+          border: 1px solid rgba(255, 255, 255, 0.065);
+          border-radius: 14px;
+          cursor: pointer;
+          transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .expanded-exercise-row:hover {
+          background: rgba(255, 255, 255, 0.075);
+          border-color: rgba(255, 255, 255, 0.14);
+          transform: translateY(-1px);
+        }
+
+        .expanded-exercise-row:active {
+          transform: translateY(0);
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ex-seq-thumb {
+          width: 44px;
+          height: 36px;
+          border-radius: 9px;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .thumb-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .ex-seq-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          min-width: 0;
+        }
+
+        .ex-seq-name {
+          font-size: 13px;
+          font-weight: 700;
+          color: #ffffff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          letter-spacing: -0.01em;
+        }
+
+        .ex-seq-meta-row {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: wrap;
+        }
+
+        .ex-seq-meta {
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        .ex-weight-badge {
+          font-size: 9.5px;
+          font-weight: 600;
+          padding: 1.5px 6px;
+          border-radius: 5px;
+          letter-spacing: 0.02em;
+        }
+
+        .ex-weight-badge.bodyweight {
+          background: rgba(255, 255, 255, 0.06);
+          color: #cbd5e1;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .ex-weight-badge.weighted {
+          background: rgba(59, 130, 246, 0.12);
+          color: #93c5fa;
+          border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        :global(.row-chevron) {
+          color: rgba(255, 255, 255, 0.2);
+          flex-shrink: 0;
+          transition: all 0.18s ease;
+        }
+
+        .expanded-exercise-row:hover :global(.row-chevron) {
+          color: rgba(255, 255, 255, 0.7);
+          transform: translateX(2px);
+        }
+
+        /* Footer Action Bar */
+        .expanded-footer-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 8px;
+          margin-top: 4px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-summary-meta {
+          font-size: 11px;
+          font-weight: 500;
+          color: #64748b;
+          letter-spacing: 0.01em;
+        }
+
+        .footer-action-buttons {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .card-actions-inline {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .no-movements-text {
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #6b7280;
+        }
+
+        .btn-card-action {
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          border-radius: 9px;
+          color: #cbd5e1;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .btn-card-action:hover {
+          background: rgba(255, 255, 255, 0.12);
+          border-color: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+          transform: translateY(-1px);
+        }
+
+        .btn-card-action:active {
+          transform: translateY(0);
+        }
+
+        .btn-delete-action {
+          color: #f87171;
+          background: rgba(239, 68, 68, 0.08);
+          border-color: rgba(239, 68, 68, 0.18);
+        }
+
+        .btn-delete-action:hover {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: rgba(239, 68, 68, 0.35);
+          color: #fca5a5;
+        }
+
+        /* Top Action Bar */
+        .top-action-bar {
+          margin-bottom: 16px;
+        }
+
+        .aux-btn-primary {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 13px 20px;
+          background: rgba(59, 130, 246, 0.12);
+          border: 1px solid rgba(59, 130, 246, 0.35);
+          border-radius: 9999px;
+          color: #60a5fa;
+          font-size: 13.5px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .aux-btn-primary:hover {
+          background: rgba(59, 130, 246, 0.22);
+          border-color: rgba(59, 130, 246, 0.5);
+          color: #93c5fd;
+          transform: translateY(-1px);
         }
       `}</style>
     </div>
