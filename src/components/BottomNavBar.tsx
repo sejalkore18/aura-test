@@ -70,7 +70,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
                     style={{
                       backgroundColor: activeUser.avatarColor,
                       boxShadow: isActive
-                        ? `0 0 10px ${activeUser.avatarColor}88`
+                        ? `0 0 8px ${activeUser.avatarColor}44`
                         : 'none',
                     }}
                   >

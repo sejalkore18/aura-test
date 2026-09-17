@@ -65,14 +65,14 @@ export const USER_PROFILES: UserProfile[] = [
   {
     id: 'sejal',
     name: 'Sejal',
-    avatarColor: '#ff2d55',
+    avatarColor: '#e11d48',
     initials: 'S',
     weightUnit: 'kg',
   },
   {
     id: 'bhaumik',
     name: 'Bhaumik',
-    avatarColor: '#0a84ff',
+    avatarColor: '#3b82f6',
     initials: 'B',
     weightUnit: 'kg',
   },
@@ -84,6 +84,7 @@ export interface WorkoutLog {
   routineId: string;
   routineTitle: string;
   date: string;
+  isoDate?: string; // Format: YYYY-MM-DD
   durationMinutes: number;
   totalSets: number;
   totalReps: number;

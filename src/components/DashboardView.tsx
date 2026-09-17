@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
-import { ArrowRight, Play } from 'lucide-react';
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { ArrowRight, Play, Activity } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
 import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 
@@ -34,6 +35,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onGoToWorkoutTab,
   onGoToHistoryTab,
 }) => {
+  // User switch animation state
+  const [logoRotation, setLogoRotation] = useState<number>(0);
+  const [isSwitching, setIsSwitching] = useState<boolean>(false);
+
+  const handleToggleUser = () => {
+    setLogoRotation((prev) => prev + 360);
+    setIsSwitching(true);
+    const nextUser = activeUser.id === 'sejal' ? 'bhaumik' : 'sejal';
+    onSwitchUser(nextUser);
+    setTimeout(() => {
+      setIsSwitching(false);
+    }, 450);
+  };
+
   // Calculate exercises remaining in today's routine
   const totalExercises = currentRoutine.exercises.length;
   const completedCount = completedExerciseIds.length;
@@ -52,7 +67,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     1350
   );
 
-  // Today's Activity exercises mapped to visual cards matching reference design
+  // Check for any activity completed today
+  const todayDateStr = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const todayLogs = userLogs.filter((log) => log.date === todayDateStr);
+  const hasActivityToday = completedExerciseIds.length > 0 || todayLogs.length > 0;
+
+  // Today's Activity exercises mapped to visual cards with toned-down, sophisticated accents
   const activityItems = [
     {
       id: 'push-ups',
@@ -60,7 +84,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       muscles: 'biceps, triceps, shoulders',
       reps: 15,
       sets: 3,
-      accentColor: '#f97316', // Vibrant orange
+      accentColor: 'rgba(234, 88, 12, 0.65)', // Muted warm terracotta
       routineIndex: 0,
     },
     {
@@ -69,7 +93,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       muscles: 'calves, legs, thighs',
       reps: 25,
       sets: 3,
-      accentColor: '#14b8a6', // Teal
+      accentColor: 'rgba(20, 184, 166, 0.65)', // Muted sage teal
       routineIndex: 1,
     },
     {
@@ -78,7 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       muscles: 'calves, hamstrings, glutes',
       reps: 15,
       sets: 3,
-      accentColor: '#3b82f6', // Bright blue
+      accentColor: 'rgba(99, 102, 241, 0.65)', // Muted slate indigo
       routineIndex: 2,
     },
   ];
@@ -157,31 +181,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <header className="dashboard-header">
         <div className="user-greeting-group">
           {/* User Profile Avatar with quick switch indicator */}
+          {/* User Profile Avatar with quick switch indicator */}
           <button
-            className="avatar-btn"
-            onClick={() => {
-              const nextUser = activeUser.id === 'sejal' ? 'bhaumik' : 'sejal';
-              onSwitchUser(nextUser);
-            }}
+            className={`avatar-btn ${isSwitching ? 'switching' : ''}`}
+            onClick={handleToggleUser}
             title={`Active: ${activeUser.name}. Click to switch athlete.`}
             aria-label={`Switch profile from ${activeUser.name}`}
           >
             <div
-              className="user-avatar-circle"
+              className="brand-logo-avatar"
               style={{
-                backgroundColor: activeUser.avatarColor,
-                boxShadow: `0 4px 14px ${activeUser.avatarColor}55`,
+                transform: `rotate(${logoRotation}deg)`,
               }}
             >
-              {activeUser.initials}
+              <Image
+                src="/logo-gradient.png"
+                alt="Aura Logo"
+                width={34}
+                height={34}
+                priority
+                className="logo-img"
+              />
             </div>
-            <div className="avatar-switch-badge">⇄</div>
+            {isSwitching && <span className="logo-ripple-pulse" />}
           </button>
 
           <div className="greeting-text-block">
             <span className="welcome-subtitle">WELCOME,</span>
-            <div className="athlete-name-row">
-              <h1 className="athlete-name">{activeUser.name} !</h1>
+            <div className="athlete-name-row" key={activeUser.id}>
+              <h1 className="athlete-name animate-user-in">{activeUser.name} !</h1>
             </div>
           </div>
         </div>
@@ -189,7 +217,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. "Workout Progress" Banner Card (Deep Charcoal Hero Card) */}
       <section
-        className="workout-progress-card"
+        className="workout-progress-card animate-card-fade"
+        key={`workout-${activeUser.id}`}
         onClick={onStartWorkout}
         role="button"
         tabIndex={0}
@@ -213,17 +242,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 calculatedPercent,
                 64,
                 6,
-                '#2dd4bf',
+                '#34d399',
                 'rgba(255, 255, 255, 0.12)',
                 '#ffffff',
-                8.5
+                8
               )}
             </div>
           ) : (
             <div className="start-play-trigger" title="Start Workout">
               <div className="play-trigger-ring">
                 <div className="play-trigger-core">
-                  <Play size={18} fill="#09090b" strokeWidth={0} className="play-triangle" />
+                  <Play size={16} fill="#03172e" strokeWidth={0} className="play-triangle" />
                 </div>
               </div>
             </div>
@@ -237,117 +266,128 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <h2 className="section-heading">Today&apos;s Activity</h2>
         </div>
 
-        <div className="activity-card-container">
-          {/* Top: Rose-Crimson Full-Width Calorie Card with Overhead Lifter & Waves */}
-          <div className="calorie-rose-card">
-            {/* Top Weightlifter Icon in Translucent Glass Circle */}
-            <div className="weightlifter-glass-circle">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="lifter-svg"
-              >
-                {/* Barbell overhead */}
-                <path
-                  d="M4 4H20M4 3V5M20 3V5"
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                {/* Lifter head */}
-                <circle cx="12" cy="7.5" r="2" fill="#ffffff" />
-                {/* Lifter arms holding barbell */}
-                <path
-                  d="M6 5L9.5 9.5L12 11.5L14.5 9.5L18 5"
-                  stroke="#ffffff"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                {/* Lifter torso & legs */}
-                <path
-                  d="M12 11.5V16M12 16L9.5 20M12 16L14.5 20"
-                  stroke="#ffffff"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-
-            {/* Middle: Calorie Value & Subtitle */}
-            <div className="calorie-meta-group">
-              <span className="calorie-number">1.350</span>
-              <span className="calorie-unit-label">Calories</span>
-            </div>
-
-            {/* Bottom Liquid Wave Overlay */}
-            <div className="wave-decoration-box">
-              <svg
-                viewBox="0 0 400 40"
-                preserveAspectRatio="none"
-                className="wave-svg"
-              >
-                <path
-                  d="M0,20 C60,35 140,10 220,24 C300,38 350,14 400,20 L400,40 L0,40 Z"
-                  fill="rgba(255, 255, 255, 0.18)"
-                />
-                <path
-                  d="M0,28 C80,18 160,34 240,20 C310,8 370,26 400,24 L400,40 L0,40 Z"
-                  fill="rgba(255, 255, 255, 0.28)"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {/* Bottom: Exercise Breakdown List (Dark Mode) */}
-          <div className="exercises-list-column">
-            {activityItems.map((item, index) => {
-              const matchedEx =
-                getExerciseById(item.id) ||
-                EXERCISE_LIBRARY.find((e) =>
-                  e.name.toLowerCase().includes(item.name.toLowerCase())
-                ) ||
-                EXERCISE_LIBRARY[index % EXERCISE_LIBRARY.length];
-
-              return (
-                <div
-                  key={item.id}
-                  className="activity-exercise-row"
-                  onClick={() => {
-                    if (matchedEx) {
-                      onOpenExerciseDetails(matchedEx);
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  title={`View ${item.name} details`}
+        {hasActivityToday ? (
+          <div className="activity-card-container animate-card-fade" key={`activity-${activeUser.id}`}>
+            {/* Top: Rose-Crimson Full-Width Calorie Card with Overhead Lifter & Waves */}
+            <div className="calorie-rose-card">
+              {/* Top Weightlifter Icon in Translucent Glass Circle */}
+              <div className="weightlifter-glass-circle">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="lifter-svg"
                 >
-                  {/* Vertical Colored Indicator Pill */}
-                  <div
-                    className="exercise-indicator-pill"
-                    style={{ backgroundColor: item.accentColor }}
+                  {/* Barbell overhead */}
+                  <path
+                    d="M4 4H20M4 3V5M20 3V5"
+                    stroke="#ffffff"
+                    strokeWidth="2"
+                    strokeLinecap="round"
                   />
+                  {/* Lifter head */}
+                  <circle cx="12" cy="7.5" r="2" fill="#ffffff" />
+                  {/* Lifter arms holding barbell */}
+                  <path
+                    d="M6 5L9.5 9.5L12 11.5L14.5 9.5L18 5"
+                    stroke="#ffffff"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {/* Lifter torso & legs */}
+                  <path
+                    d="M12 11.5V16M12 16L9.5 20M12 16L14.5 20"
+                    stroke="#ffffff"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
 
-                  {/* Exercise Title & Targeted Muscle Groups */}
-                  <div className="exercise-text-meta">
-                    <span className="exercise-row-name">{item.name}</span>
-                    <span className="exercise-row-muscles">{item.muscles}</span>
-                  </div>
+              {/* Middle: Calorie Value & Subtitle */}
+              <div className="calorie-meta-group">
+                <span className="calorie-number">1.350</span>
+                <span className="calorie-unit-label">Calories</span>
+              </div>
 
-                  {/* Target Reps and Sets Badge: e.g. 15 x3 */}
-                  <div className="exercise-reps-formula">
-                    <span className="formula-reps">{item.reps}</span>
-                    <span className="formula-multiplier">x{item.sets}</span>
+              {/* Bottom Liquid Wave Overlay */}
+              <div className="wave-decoration-box">
+                <svg
+                  viewBox="0 0 400 40"
+                  preserveAspectRatio="none"
+                  className="wave-svg"
+                >
+                  <path
+                    d="M0,20 C60,35 140,10 220,24 C300,38 350,14 400,20 L400,40 L0,40 Z"
+                    fill="rgba(255, 255, 255, 0.04)"
+                  />
+                  <path
+                    d="M0,28 C80,18 160,34 240,20 C310,8 370,26 400,24 L400,40 L0,40 Z"
+                    fill="rgba(255, 255, 255, 0.08)"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Bottom: Exercise Breakdown List (Dark Mode) */}
+            <div className="exercises-list-column">
+              {activityItems.map((item, index) => {
+                const matchedEx =
+                  getExerciseById(item.id) ||
+                  EXERCISE_LIBRARY.find((e) =>
+                    e.name.toLowerCase().includes(item.name.toLowerCase())
+                  ) ||
+                  EXERCISE_LIBRARY[index % EXERCISE_LIBRARY.length];
+
+                return (
+                  <div
+                    key={item.id}
+                    className="activity-exercise-row"
+                    onClick={() => {
+                      if (matchedEx) {
+                        onOpenExerciseDetails(matchedEx);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title={`View ${item.name} details`}
+                  >
+                    {/* Vertical Colored Indicator Pill */}
+                    <div
+                      className="exercise-indicator-pill"
+                      style={{ backgroundColor: item.accentColor }}
+                    />
+
+                    {/* Exercise Title & Targeted Muscle Groups */}
+                    <div className="exercise-text-meta">
+                      <span className="exercise-row-name">{item.name}</span>
+                      <span className="exercise-row-muscles">{item.muscles}</span>
+                    </div>
+
+                    {/* Target Reps and Sets Badge: e.g. 15 x3 */}
+                    <div className="exercise-reps-formula">
+                      <span className="formula-reps">{item.reps}</span>
+                      <span className="formula-multiplier">x{item.sets}</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="no-activity-card animate-card-fade" key={`no-activity-${activeUser.id}`}>
+            <div className="no-activity-icon-bubble">
+              <Activity size={28} strokeWidth={2.2} className="no-activity-icon" />
+            </div>
+            <div className="no-activity-text-content">
+              <h3 className="no-activity-title">No activity today</h3>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Guaranteed Bottom Spacer between Today's Activity and Bottom Navigation Bar */}
@@ -392,44 +432,92 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           align-items: center;
           justify-content: center;
           padding: 0;
-          border-radius: 50%;
           cursor: pointer;
         }
 
-        .user-avatar-circle {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
+        .brand-logo-avatar {
+          width: 34px;
+          height: 34px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ffffff;
-          font-weight: 800;
-          font-size: 1.15rem;
-          font-family: var(--font-display);
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          transition: transform 0.2s ease;
+          transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+          will-change: transform;
         }
 
-        .avatar-btn:hover .user-avatar-circle {
-          transform: scale(1.05);
+        .avatar-btn:hover .brand-logo-avatar {
+          filter: brightness(1.15);
         }
 
-        .avatar-switch-badge {
+        .avatar-btn:active .brand-logo-avatar {
+          transform: scale(0.9);
+        }
+
+        .logo-ripple-pulse {
           position: absolute;
-          bottom: -2px;
-          right: -2px;
-          width: 17px;
-          height: 17px;
+          width: 34px;
+          height: 34px;
           border-radius: 50%;
-          background: #ffffff;
-          color: #09090b;
-          font-size: 0.62rem;
-          font-weight: 800;
+          border: 1.5px solid rgba(99, 102, 241, 0.6);
+          animation: logoPulseOut 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          pointer-events: none;
+        }
+
+        @keyframes logoPulseOut {
+          0% {
+            transform: scale(0.85);
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+          }
+          100% {
+            transform: scale(1.7);
+            opacity: 0;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0);
+          }
+        }
+
+        .athlete-name-row {
           display: flex;
           align-items: center;
-          justify-content: center;
-          border: 2px solid #08080a;
+        }
+
+        .animate-user-in {
+          animation: userSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: transform, opacity;
+        }
+
+        @keyframes userSlideIn {
+          0% {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.95);
+            filter: blur(4px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        .animate-card-fade {
+          animation: cardFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes cardFadeIn {
+          0% {
+            opacity: 0.55;
+            transform: translateY(4px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        :global(.logo-img) {
+          width: 34px;
+          height: 34px;
+          object-fit: contain;
         }
 
         .greeting-text-block {
@@ -466,12 +554,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           display: inline-block;
         }
 
-        /* 2. Workout Progress Card (Deep Dark Hero Card) */
+        /* 2. Workout Progress Card (Dark Glass Hero Card matching Activity Container) */
         .workout-progress-card {
-          background: #111417;
-          border-radius: 24px;
+          background: rgba(22, 22, 28, 0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-radius: 26px;
           padding: 22px 24px;
-          box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
           cursor: pointer;
           transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
           border: 1px solid rgba(255, 255, 255, 0.09);
@@ -479,9 +569,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         .workout-progress-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.7);
+          box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.08);
           border-color: rgba(255, 255, 255, 0.18);
-          background: #161920;
+          background: rgba(30, 30, 38, 0.85);
         }
 
         .workout-progress-card:active {
@@ -537,38 +627,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         .play-trigger-ring {
           position: relative;
-          width: 58px;
-          height: 58px;
+          width: 56px;
+          height: 56px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(45, 212, 191, 0.12);
-          border: 1.5px solid rgba(45, 212, 191, 0.35);
+          background: rgba(10, 132, 255, 0.1);
+          border: 1.5px solid rgba(10, 132, 255, 0.32);
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .play-trigger-core {
-          width: 44px;
-          height: 44px;
+          width: 42px;
+          height: 42px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #2dd4bf 0%, #10b981 100%);
+          background: #0a84ff;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 16px rgba(45, 212, 191, 0.45);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
           transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
         }
 
         .workout-progress-card:hover .play-trigger-ring {
-          border-color: rgba(45, 212, 191, 0.7);
-          background: rgba(45, 212, 191, 0.22);
+          border-color: rgba(10, 132, 255, 0.5);
+          background: rgba(10, 132, 255, 0.18);
           transform: scale(1.05);
         }
 
         .workout-progress-card:hover .play-trigger-core {
-          transform: scale(1.08);
-          box-shadow: 0 6px 22px rgba(45, 212, 191, 0.65);
+          transform: scale(1.06);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
         }
 
         .workout-progress-card:active .play-trigger-core {
@@ -634,10 +724,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           gap: 14px;
         }
 
-        /* Top Rose Calorie Card */
+        /* Top Calorie Card (Sleek Obsidian Charcoal Glass) */
         .calorie-rose-card {
           width: 100%;
-          background: linear-gradient(180deg, #d34e68 0%, #b8324f 100%);
+          background: linear-gradient(180deg, #1e1e24 0%, #131317 100%);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 20px;
           padding: 22px 16px 20px;
           display: flex;
@@ -646,22 +737,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           justify-content: center;
           position: relative;
           overflow: hidden;
-          box-shadow: 0 8px 24px -4px rgba(211, 78, 104, 0.4);
+          box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.1);
         }
 
         .weightlifter-glass-circle {
           width: 48px;
           height: 48px;
           border-radius: 14px;
-          background: rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+          background: rgba(255, 255, 255, 0.06);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.16);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 2;
           margin-bottom: 10px;
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
         }
 
         .calorie-meta-group {
@@ -683,10 +775,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         .calorie-unit-label {
-          font-size: 0.85rem;
-          color: rgba(255, 255, 255, 0.88);
+          font-size: 0.82rem;
+          color: rgba(255, 255, 255, 0.72);
           font-weight: 500;
           margin-top: 3px;
+          letter-spacing: 0.02em;
         }
 
         .wave-decoration-box {
@@ -772,6 +865,81 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-size: 0.75rem;
           font-weight: 600;
           color: var(--text-secondary, #9a9aa2);
+        }
+
+        /* Empty State: No Activity Today */
+        .no-activity-card {
+          background: rgba(22, 22, 28, 0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-radius: 26px;
+          padding: 34px 20px 28px;
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 14px;
+        }
+
+        .no-activity-icon-bubble {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          margin-bottom: 2px;
+        }
+
+        .no-activity-text-content {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          align-items: center;
+        }
+
+        .no-activity-title {
+          font-family: var(--font-body);
+          font-size: 0.86rem;
+          font-weight: 500;
+          color: var(--text-secondary, #9a9aa2);
+          margin: 0;
+          line-height: 1.35;
+        }
+
+        .no-activity-subtitle {
+          font-size: 0.82rem;
+          color: var(--text-secondary, #9a9aa2);
+          max-width: 270px;
+          margin: 0;
+          line-height: 1.45;
+        }
+
+        .no-activity-start-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 9px 18px;
+          border-radius: 9999px;
+          background: #ffffff;
+          color: #09090b;
+          font-size: 0.82rem;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          box-shadow: 0 4px 14px rgba(255, 255, 255, 0.18);
+          margin-top: 4px;
+        }
+
+        .no-activity-start-btn:hover {
+          background: #e4e4e7;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(255, 255, 255, 0.28);
+        }
+
+        .no-activity-start-btn:active {
+          transform: translateY(0);
         }
       `}</style>
     </div>

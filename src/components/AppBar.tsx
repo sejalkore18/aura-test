@@ -12,6 +12,9 @@ interface AppBarProps {
   activeUser: UserProfile;
   allUsers: UserProfile[];
   onSwitchUser: (userId: 'sejal' | 'bhaumik') => void;
+  showUserSwitcher?: boolean;
+  transparentBackButton?: boolean;
+  titlePosition?: 'center' | 'left';
 }
 
 export const AppBar: React.FC<AppBarProps> = ({
@@ -22,21 +25,28 @@ export const AppBar: React.FC<AppBarProps> = ({
   activeUser,
   allUsers,
   onSwitchUser,
+  showUserSwitcher = true,
+  transparentBackButton = false,
+  titlePosition = 'center',
 }) => {
   return (
     <header className="app-bar">
       {/* Left Slot: Back Button OR Branding */}
-      <div className="left-slot">
+      <div className={`left-slot ${titlePosition === 'left' ? 'left-aligned-title' : ''}`}>
         {showBackButton ? (
-          <button
-            className="appbar-back-btn"
-            onClick={onBack}
-            aria-label="Go Back"
-            title="Go Back"
-          >
-            <ArrowLeft size={19} />
-            <span className="back-label">Back</span>
-          </button>
+          <>
+            <button
+              className={`appbar-back-btn ${transparentBackButton ? 'ghost-back' : ''}`}
+              onClick={onBack}
+              aria-label="Go Back"
+              title="Go Back"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            {titlePosition === 'left' && title && (
+              <h1 className="appbar-left-title">{title}</h1>
+            )}
+          </>
         ) : (
           <div className="appbar-brand">
             <Sparkles size={16} className="brand-icon" />
@@ -45,36 +55,40 @@ export const AppBar: React.FC<AppBarProps> = ({
         )}
       </div>
 
-      {/* Center Slot: Dynamic Screen Title */}
-      <div className="center-slot">
-        {title && <h1 className="appbar-title">{title}</h1>}
-        {subtitle && <span className="appbar-subtitle">{subtitle}</span>}
-      </div>
+      {/* Center Slot: Dynamic Screen Title (when centered) */}
+      {titlePosition !== 'left' && (
+        <div className="center-slot">
+          {title && <h1 className="appbar-title">{title}</h1>}
+          {subtitle && <span className="appbar-subtitle">{subtitle}</span>}
+        </div>
+      )}
 
       {/* Right Slot: User Profile Switcher */}
-      <div className="right-slot">
-        <div className="profile-pill-toggle">
-          {allUsers.map((user) => {
-            const isActive = user.id === activeUser.id;
-            return (
-              <button
-                key={user.id}
-                className={`profile-chip ${isActive ? 'active' : ''}`}
-                onClick={() => onSwitchUser(user.id)}
-                title={`Switch to ${user.name}`}
-              >
-                <span
-                  className="chip-avatar"
-                  style={{ backgroundColor: user.avatarColor }}
+      {showUserSwitcher && (
+        <div className="right-slot">
+          <div className="profile-pill-toggle">
+            {allUsers.map((user) => {
+              const isActive = user.id === activeUser.id;
+              return (
+                <button
+                  key={user.id}
+                  className={`profile-chip ${isActive ? 'active' : ''}`}
+                  onClick={() => onSwitchUser(user.id)}
+                  title={`Switch to ${user.name}`}
                 >
-                  {user.initials}
-                </span>
-                <span className="chip-name">{user.name}</span>
-              </button>
-            );
-          })}
+                  <span
+                    className="chip-avatar"
+                    style={{ backgroundColor: user.avatarColor }}
+                  >
+                    {user.initials}
+                  </span>
+                  <span className="chip-name">{user.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <style jsx>{`
         .app-bar {
@@ -84,10 +98,10 @@ export const AppBar: React.FC<AppBarProps> = ({
           right: 0;
           z-index: 70;
           height: 56px;
-          background: rgba(12, 12, 16, 0.92);
+          background: rgba(8, 8, 10, 0.95);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -101,17 +115,32 @@ export const AppBar: React.FC<AppBarProps> = ({
           min-width: 90px;
         }
 
+        .left-slot.left-aligned-title {
+          flex: 1;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .appbar-left-title {
+          font-family: var(--font-display);
+          font-size: 1.08rem;
+          font-weight: 700;
+          color: #ffffff;
+          letter-spacing: -0.015em;
+          margin: 0;
+          line-height: 1.2;
+        }
+
         .appbar-back-btn {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
           color: #ffffff;
-          padding: 6px 12px 6px 8px;
-          border-radius: var(--radius-pill);
+          border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          font-size: 0.84rem;
-          font-weight: 600;
           transition: all 0.2s ease;
           cursor: pointer;
         }
@@ -122,12 +151,24 @@ export const AppBar: React.FC<AppBarProps> = ({
         }
 
         .appbar-back-btn:active {
-          transform: scale(0.96);
+          transform: scale(0.94);
         }
 
-        .back-label {
-          font-family: var(--font-display);
-          letter-spacing: -0.01em;
+        .appbar-back-btn.ghost-back {
+          background: transparent;
+          border: none;
+          box-shadow: none;
+        }
+
+        .appbar-back-btn.ghost-back:hover {
+          background: transparent;
+          transform: translateX(-3px);
+          opacity: 0.8;
+        }
+
+        .appbar-back-btn.ghost-back:active {
+          transform: scale(0.92) translateX(-3px);
+          opacity: 0.65;
         }
 
         .appbar-brand {

@@ -25,6 +25,7 @@ import {
   USER_PROFILES,
 } from '@/types/workout';
 import { DEFAULT_ROUTINES, getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
+import { INITIAL_WORKOUT_LOGS } from '@/data/mockWorkoutLogs';
 
 export default function HomePage() {
   // 0. User Profile State (Sejal and Bhaumik)
@@ -57,7 +58,7 @@ export default function HomePage() {
   const [summaryLog, setSummaryLog] = useState<WorkoutLog | null>(null);
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showAddExercise, setShowAddExercise] = useState<boolean>(false);
-  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(INITIAL_WORKOUT_LOGS);
 
   // Find active routine object
   const currentRoutine =
@@ -75,7 +76,14 @@ export default function HomePage() {
       // Load saved logs
       const savedLogs = localStorage.getItem('aura_workout_logs');
       if (savedLogs) {
-        setWorkoutLogs(JSON.parse(savedLogs));
+        const parsed = JSON.parse(savedLogs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setWorkoutLogs(parsed);
+        } else {
+          setWorkoutLogs(INITIAL_WORKOUT_LOGS);
+        }
+      } else {
+        setWorkoutLogs(INITIAL_WORKOUT_LOGS);
       }
 
       // Load routines if customized
@@ -313,16 +321,23 @@ export default function HomePage() {
       }
     });
 
+    const now = new Date();
+    const nowYear = now.getFullYear();
+    const nowMonth = String(now.getMonth() + 1).padStart(2, '0');
+    const nowDay = String(now.getDate()).padStart(2, '0');
+    const isoDateStr = `${nowYear}-${nowMonth}-${nowDay}`;
+
     const newLog: WorkoutLog = {
       id: `log_${Date.now()}`,
       userId: activeUserId,
       routineId: currentRoutine.id,
       routineTitle: currentRoutine.title,
-      date: new Date().toLocaleDateString('en-US', {
+      date: now.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
       }),
+      isoDate: isoDateStr,
       durationMinutes: durationMins,
       totalSets,
       totalReps,
@@ -426,7 +441,7 @@ export default function HomePage() {
       case 'library':
         return 'Exercise Library';
       case 'history':
-        return `${activeUser.name}'s Progress`;
+        return 'Progress';
       case 'profile':
         return `${activeUser.name}'s Profile`;
     }
@@ -444,7 +459,7 @@ export default function HomePage() {
       case 'library':
         return 'All Movements';
       case 'history':
-        return 'Progress & Logs';
+        return undefined;
       case 'profile':
         return 'Athlete Stats';
     }
@@ -462,6 +477,9 @@ export default function HomePage() {
           activeUser={activeUser}
           allUsers={USER_PROFILES}
           onSwitchUser={handleSwitchUser}
+          showUserSwitcher={activeTab !== 'history'}
+          transparentBackButton={activeTab === 'history'}
+          titlePosition={activeTab === 'history' ? 'left' : 'center'}
         />
       )}
 
@@ -654,6 +672,14 @@ export default function HomePage() {
           flex-direction: column;
           min-height: 0;
           -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .tab-scroll-viewport::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
         }
       `}</style>
     </PhoneFrame>
