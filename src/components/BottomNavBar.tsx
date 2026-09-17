@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, Dumbbell, BookOpen, History, User } from 'lucide-react';
+import { LayoutGrid, Dumbbell, BookOpen, TrendingUp, User } from 'lucide-react';
 import { UserProfile } from '@/types/workout';
 
 export type NavTab = 'dashboard' | 'workout' | 'library' | 'history' | 'profile';
@@ -23,7 +23,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
     {
       id: 'dashboard' as NavTab,
       label: 'Home',
-      icon: Home,
+      icon: LayoutGrid,
     },
     {
       id: 'workout' as NavTab,
@@ -37,8 +37,8 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
     },
     {
       id: 'history' as NavTab,
-      label: 'History',
-      icon: History,
+      label: 'Progress',
+      icon: TrendingUp,
     },
     {
       id: 'profile' as NavTab,
@@ -79,11 +79,10 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 ) : (
                   <Icon
                     size={21}
-                    strokeWidth={isActive ? 2.6 : 1.8}
-                    fill={isActive && tab.id === 'dashboard' ? 'currentColor' : 'none'}
+                    strokeWidth={isActive ? 2.4 : 1.8}
+                    fill="none"
                   />
                 )}
-                {isActive && !tab.customAvatar && <div className="active-dot" />}
               </div>
               <span className="tab-label">{tab.label}</span>
             </button>
@@ -144,16 +143,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           align-items: center;
           justify-content: center;
           height: 24px;
-        }
-
-        .active-dot {
-          position: absolute;
-          bottom: -5px;
-          width: 4px;
-          height: 4px;
-          background: #ffffff;
-          border-radius: 50%;
-          box-shadow: 0 0 6px #ffffff;
         }
 
         .avatar-icon {

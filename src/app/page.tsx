@@ -426,7 +426,7 @@ export default function HomePage() {
       case 'library':
         return 'Exercise Library';
       case 'history':
-        return `${activeUser.name}'s History`;
+        return `${activeUser.name}'s Progress`;
       case 'profile':
         return `${activeUser.name}'s Profile`;
     }
@@ -444,7 +444,7 @@ export default function HomePage() {
       case 'library':
         return 'All Movements';
       case 'history':
-        return 'Past Activity';
+        return 'Progress & Logs';
       case 'profile':
         return 'Athlete Stats';
     }

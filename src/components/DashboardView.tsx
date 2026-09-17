@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Pencil, ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
 import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 
@@ -50,10 +50,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalBurnedCalories = userLogs.reduce(
     (acc, log) => acc + log.durationMinutes * 9,
     1350
-  );
-  const totalVolumeLifted = userLogs.reduce(
-    (acc, log) => acc + log.totalVolumeKg,
-    10.7
   );
 
   // Today's Activity exercises mapped to visual cards matching reference design
@@ -224,9 +220,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="start-workout-cta">
-              <span className="start-cta-text">Start Workout</span>
-              <Play size={13} fill="currentColor" strokeWidth={0} />
+            <div className="start-play-trigger" title="Start Workout">
+              <div className="play-trigger-ring">
+                <div className="play-trigger-core">
+                  <Play size={18} fill="#09090b" strokeWidth={0} className="play-triangle" />
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -236,18 +235,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <section className="todays-activity-section">
         <div className="section-header-row">
           <h2 className="section-heading">Today&apos;s Activity</h2>
-          <button
-            className="edit-routine-btn"
-            onClick={onGoToWorkoutTab}
-            aria-label="Edit today's routine"
-          >
-            <span>Edit</span>
-            <Pencil size={13} className="edit-icon" />
-          </button>
         </div>
 
         <div className="activity-card-container">
-          {/* Left: Rose-Crimson Vertical Calorie Card with Overhead Lifter & Waves */}
+          {/* Top: Rose-Crimson Full-Width Calorie Card with Overhead Lifter & Waves */}
           <div className="calorie-rose-card">
             {/* Top Weightlifter Icon in Translucent Glass Circle */}
             <div className="weightlifter-glass-circle">
@@ -296,23 +287,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Bottom Liquid Wave Overlay */}
             <div className="wave-decoration-box">
               <svg
-                viewBox="0 0 120 40"
+                viewBox="0 0 400 40"
                 preserveAspectRatio="none"
                 className="wave-svg"
               >
                 <path
-                  d="M0,20 C30,35 60,10 90,25 C105,32 115,22 120,20 L120,40 L0,40 Z"
+                  d="M0,20 C60,35 140,10 220,24 C300,38 350,14 400,20 L400,40 L0,40 Z"
                   fill="rgba(255, 255, 255, 0.18)"
                 />
                 <path
-                  d="M0,28 C25,18 55,34 85,22 C102,15 112,28 120,25 L120,40 L0,40 Z"
+                  d="M0,28 C80,18 160,34 240,20 C310,8 370,26 400,24 L400,40 L0,40 Z"
                   fill="rgba(255, 255, 255, 0.28)"
                 />
               </svg>
             </div>
           </div>
 
-          {/* Right: Exercise Breakdown List (Dark Mode) */}
+          {/* Bottom: Exercise Breakdown List (Dark Mode) */}
           <div className="exercises-list-column">
             {activityItems.map((item, index) => {
               const matchedEx =
@@ -359,91 +350,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </section>
 
-      {/* 4. "Overall Status" Section (Dark Glass Card) */}
-      <section className="overall-status-section">
-        <div className="section-header-row">
-          <h2 className="section-heading">Overall Status</h2>
-          <button
-            className="see-more-btn"
-            onClick={onGoToHistoryTab}
-            aria-label="See more activity logs"
-          >
-            <span>See more</span>
-            <ArrowRight size={14} className="arrow-icon" />
-          </button>
-        </div>
-
-        <div className="status-metrics-card">
-          {/* Row 1: Calories Loss */}
-          <div className="status-metric-row">
-            <div className="metric-icon-box flame-bg">
-              <span className="metric-emoji" role="img" aria-label="flame">
-                🔥
-              </span>
-            </div>
-
-            <div className="metric-info-block">
-              <span className="metric-label">Calories Loss</span>
-              <div className="metric-value-line">
-                <span className="metric-number">12.182 Kcal</span>
-                <span className="metric-trend-badge">+2,8%</span>
-              </div>
-            </div>
-
-            <div className="metric-ring-box">
-              {renderProgressRing(
-                37,
-                44,
-                3.8,
-                '#14b8a6',
-                'rgba(255, 255, 255, 0.12)',
-                '#ffffff',
-                5.5
-              )}
-            </div>
-          </div>
-
-          {/* Row 2: Weight Loss / Volume Lifted */}
-          <div className="status-metric-row">
-            <div className="metric-icon-box lifter-bg">
-              <span className="metric-emoji" role="img" aria-label="weightlifter">
-                🏋️
-              </span>
-            </div>
-
-            <div className="metric-info-block">
-              <span className="metric-label">Weight Loss</span>
-              <div className="metric-value-line">
-                <span className="metric-number">10.7 Kg</span>
-                <span className="metric-trend-badge">+2,8%</span>
-              </div>
-            </div>
-
-            <div className="metric-ring-box">
-              {renderProgressRing(
-                80,
-                44,
-                3.8,
-                '#14b8a6',
-                'rgba(255, 255, 255, 0.12)',
-                '#ffffff',
-                5.5
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Guaranteed Bottom Spacer between Today's Activity and Bottom Navigation Bar */}
+      <div className="dashboard-bottom-spacer" />
 
       <style jsx>{`
         .dashboard-container {
           display: flex;
           flex-direction: column;
           gap: 22px;
-          padding: 24px 20px 20px;
+          padding: 24px 20px 0;
           background-color: var(--bg-primary, #08080a);
           color: var(--text-primary, #ffffff);
           min-height: 100%;
           font-family: var(--font-body);
+        }
+
+        .dashboard-bottom-spacer {
+          height: 24px;
+          flex-shrink: 0;
+          width: 100%;
         }
 
         /* 1. Header Styling (Dark Mode) */
@@ -585,9 +510,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           color: #ffffff;
           margin: 0;
           letter-spacing: -0.01em;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          line-height: 1.2;
         }
 
         .progress-subtitle {
@@ -595,43 +518,65 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           color: var(--text-secondary, #9a9aa2);
           font-weight: 500;
           margin: 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          line-height: 1.35;
         }
 
         .progress-ring-box {
           flex-shrink: 0;
         }
 
-        .start-workout-cta {
-          display: inline-flex;
+        .start-play-trigger {
+          position: relative;
+          display: flex;
           align-items: center;
-          gap: 7px;
-          background: #ffffff;
-          color: #09090b;
-          padding: 10px 18px;
-          border-radius: var(--radius-pill);
-          font-family: var(--font-display);
-          font-size: 0.86rem;
-          font-weight: 700;
-          box-shadow: 0 4px 16px rgba(255, 255, 255, 0.22);
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          justify-content: center;
           flex-shrink: 0;
+          width: 64px;
+          height: 64px;
         }
 
-        .workout-progress-card:hover .start-workout-cta {
-          background: #f4f4f5;
-          transform: scale(1.04);
-          box-shadow: 0 6px 22px rgba(255, 255, 255, 0.35);
+        .play-trigger-ring {
+          position: relative;
+          width: 58px;
+          height: 58px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(45, 212, 191, 0.12);
+          border: 1.5px solid rgba(45, 212, 191, 0.35);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .workout-progress-card:active .start-workout-cta {
-          transform: scale(0.97);
+        .play-trigger-core {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #2dd4bf 0%, #10b981 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 16px rgba(45, 212, 191, 0.45);
+          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
         }
 
-        .start-cta-text {
-          letter-spacing: -0.01em;
+        .workout-progress-card:hover .play-trigger-ring {
+          border-color: rgba(45, 212, 191, 0.7);
+          background: rgba(45, 212, 191, 0.22);
+          transform: scale(1.05);
+        }
+
+        .workout-progress-card:hover .play-trigger-core {
+          transform: scale(1.08);
+          box-shadow: 0 6px 22px rgba(45, 212, 191, 0.65);
+        }
+
+        .workout-progress-card:active .play-trigger-core {
+          transform: scale(0.95);
+        }
+
+        .play-triangle {
+          margin-left: 2px;
         }
 
         /* Circular Progress Ring (Centered Mathematically via SVG text) */
@@ -655,7 +600,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         .todays-activity-section {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
+          margin-top: 14px;
         }
 
         .section-header-row {
@@ -674,54 +620,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           letter-spacing: -0.01em;
         }
 
-        .edit-routine-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-secondary, #9a9aa2);
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 4px 6px;
-          border-radius: var(--radius-sm);
-          transition: color 0.18s ease;
-        }
-
-        .edit-routine-btn:hover {
-          color: #ffffff;
-        }
-
-        .edit-icon {
-          color: inherit;
-        }
-
         /* Main Activity Container Card (Dark Glass) */
         .activity-card-container {
           background: rgba(22, 22, 28, 0.75);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border-radius: 26px;
-          padding: 14px;
+          padding: 16px;
           box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.09);
           display: flex;
+          flex-direction: column;
           gap: 14px;
-          align-items: stretch;
         }
 
-        /* Left Rose Card */
+        /* Top Rose Calorie Card */
         .calorie-rose-card {
-          width: 120px;
-          flex-shrink: 0;
+          width: 100%;
           background: linear-gradient(180deg, #d34e68 0%, #b8324f 100%);
           border-radius: 20px;
-          padding: 18px 10px 14px;
+          padding: 22px 16px 20px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           position: relative;
           overflow: hidden;
           box-shadow: 0 8px 24px -4px rgba(211, 78, 104, 0.4);
@@ -739,6 +661,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           align-items: center;
           justify-content: center;
           z-index: 2;
+          margin-bottom: 10px;
         }
 
         .calorie-meta-group {
@@ -746,14 +669,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           flex-direction: column;
           align-items: center;
           text-align: center;
-          margin-top: 10px;
-          margin-bottom: 12px;
           z-index: 2;
+          margin-bottom: 6px;
         }
 
         .calorie-number {
           font-family: var(--font-display);
-          font-size: 1.45rem;
+          font-size: 1.85rem;
           font-weight: 800;
           color: #ffffff;
           letter-spacing: -0.03em;
@@ -761,7 +683,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         .calorie-unit-label {
-          font-size: 0.78rem;
+          font-size: 0.85rem;
           color: rgba(255, 255, 255, 0.88);
           font-weight: 500;
           margin-top: 3px;
@@ -772,7 +694,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           bottom: 0;
           left: 0;
           right: 0;
-          height: 42px;
+          height: 40px;
           pointer-events: none;
           overflow: hidden;
         }
@@ -782,22 +704,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           height: 100%;
         }
 
-        /* Right Exercises Column */
+        /* Bottom Exercises Column */
         .exercises-list-column {
-          flex: 1;
+          width: 100%;
           display: flex;
           flex-direction: column;
-          justify-content: space-around;
-          gap: 10px;
-          padding: 4px 4px 4px 2px;
+          gap: 6px;
         }
 
         .activity-exercise-row {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 6px 6px;
-          border-radius: 12px;
+          gap: 12px;
+          padding: 10px 10px;
+          border-radius: 14px;
           cursor: pointer;
           transition: background-color 0.15s ease;
         }
@@ -808,7 +728,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         .exercise-indicator-pill {
           width: 5px;
-          height: 18px;
+          height: 20px;
           border-radius: 4px;
           flex-shrink: 0;
         }
@@ -817,7 +737,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           flex: 1;
           display: flex;
           flex-direction: column;
-          line-height: 1.25;
+          line-height: 1.3;
         }
 
         .exercise-row-name {
@@ -829,13 +749,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         .exercise-row-muscles {
-          font-size: 0.72rem;
+          font-size: 0.76rem;
           color: var(--text-secondary, #9a9aa2);
           font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 130px;
         }
 
         .exercise-reps-formula {
@@ -847,128 +763,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         .formula-reps {
           font-family: var(--font-display);
-          font-size: 0.98rem;
+          font-size: 1.05rem;
           font-weight: 800;
           color: #ffffff;
         }
 
         .formula-multiplier {
-          font-size: 0.72rem;
+          font-size: 0.75rem;
           font-weight: 600;
           color: var(--text-secondary, #9a9aa2);
-        }
-
-        /* 4. Overall Status Section (Dark Glass) */
-        .overall-status-section {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .see-more-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-secondary, #9a9aa2);
-          background: none;
-          border: none;
-          cursor: pointer;
-          transition: color 0.18s ease;
-        }
-
-        .see-more-btn:hover {
-          color: #ffffff;
-        }
-
-        .arrow-icon {
-          transition: transform 0.18s ease;
-        }
-
-        .see-more-btn:hover .arrow-icon {
-          transform: translateX(2px);
-        }
-
-        .status-metrics-card {
-          background: rgba(22, 22, 28, 0.75);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border-radius: 26px;
-          padding: 16px 18px;
-          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .status-metric-row {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-
-        .metric-icon-box {
-          width: 48px;
-          height: 48px;
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .flame-bg {
-          background: rgba(255, 159, 10, 0.14);
-          border: 1px solid rgba(255, 159, 10, 0.25);
-        }
-
-        .lifter-bg {
-          background: rgba(10, 132, 255, 0.12);
-          border: 1px solid rgba(10, 132, 255, 0.22);
-        }
-
-        .metric-emoji {
-          font-size: 1.45rem;
-        }
-
-        .metric-info-block {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
-
-        .metric-label {
-          font-size: 0.78rem;
-          color: var(--text-secondary, #9a9aa2);
-          font-weight: 500;
-        }
-
-        .metric-value-line {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-        }
-
-        .metric-number {
-          font-family: var(--font-display);
-          font-size: 1.08rem;
-          font-weight: 800;
-          color: #ffffff;
-          letter-spacing: -0.02em;
-        }
-
-        .metric-trend-badge {
-          color: #30d158;
-          font-size: 0.78rem;
-          font-weight: 700;
-          font-family: var(--font-display);
-        }
-
-        .metric-ring-box {
-          flex-shrink: 0;
         }
       `}</style>
     </div>

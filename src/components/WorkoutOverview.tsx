@@ -10,7 +10,7 @@ import {
   Circle,
   Info,
   Play,
-  History,
+  TrendingUp,
   Plus,
   RotateCcw,
   Sparkles
@@ -220,8 +220,8 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
             <span>Add Exercise</span>
           </button>
           <button className="aux-btn" onClick={onOpenHistory}>
-            <History size={15} />
-            <span>History & Logs</span>
+            <TrendingUp size={15} />
+            <span>Progress & Logs</span>
           </button>
           {completedCount > 0 && (
             <button className="aux-btn text-muted" onClick={onResetProgress}>
