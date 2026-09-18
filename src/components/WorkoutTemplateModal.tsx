@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
+  ArrowLeft,
   X,
   Plus,
   Trash2,
@@ -209,28 +210,41 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
   });
 
   return (
-    <div className="template-modal-backdrop animate-fade-in" onClick={onClose}>
-      <div
-        className="template-modal-sheet animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="sheet-header">
-          <div className="header-titles">
-            <span className="badge-mode">
-              {mode === 'create' ? 'New Workout Template' : 'Edit Template'}
-            </span>
-            <h2 className="sheet-title">
-              {mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
-            </h2>
-          </div>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
-            <X size={20} />
-          </button>
+    <div
+      className="template-page-view"
+      role="region"
+      aria-label={mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
+    >
+      {/* Page Header */}
+      <header className="page-header">
+        <button
+          type="button"
+          className="back-btn"
+          onClick={onClose}
+          aria-label="Go Back"
+          title="Go Back"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div className="header-titles">
+          <span className="badge-mode">
+            {mode === 'create' ? 'New Workout Template' : 'Edit Template'}
+          </span>
+          <h1 className="page-title">
+            {mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
+          </h1>
         </div>
+        <button
+          type="button"
+          className="header-cancel-btn"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+      </header>
 
-        {/* Content Body */}
-        <div className="sheet-body">
+      {/* Content Body */}
+      <div className="page-body">
           {errorMessage && (
             <div className="error-banner animate-fade-in">
               <AlertTriangle size={16} />
@@ -488,7 +502,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="sheet-footer">
+        <footer className="page-footer">
           {mode === 'edit' && onDelete && (
             <div className="delete-area">
               {showDeleteConfirm ? (
@@ -537,7 +551,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
               <span>{mode === 'create' ? 'Create Template' : 'Save Changes'}</span>
             </button>
           </div>
-        </div>
+        </footer>
 
         {/* Exercise Picker Overlay Sheet */}
         {showExercisePicker && (
@@ -627,86 +641,114 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         )}
 
         <style jsx>{`
-          .template-modal-backdrop {
-            position: fixed;
+          .template-page-view {
+            position: absolute;
             inset: 0;
-            z-index: 1500;
-            background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(12px);
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-          }
-
-          .template-modal-sheet {
-            position: relative;
+            z-index: 200;
             width: 100%;
-            max-width: 480px;
-            max-height: 90vh;
-            background: #121217;
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 28px 28px 0 0;
+            height: 100%;
+            background: #08080a;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.7);
+            animation: pageSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
           }
 
-          .sheet-header {
+          @keyframes pageSlideIn {
+            from {
+              opacity: 0;
+              transform: translateX(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+
+          .page-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 20px 22px 14px 22px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 16px 18px;
+            background: #0d0d12;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 12px;
+            flex-shrink: 0;
           }
 
-          .header-titles {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-
-          .badge-mode {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            color: #3b82f6;
-          }
-
-          .sheet-title {
-            font-size: 19px;
-            font-weight: 800;
-            color: #f3f4f6;
-            letter-spacing: -0.4px;
-          }
-
-          .close-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #9ca3af;
-            width: 36px;
-            height: 36px;
+          .back-btn {
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f3f4f6;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.18s ease;
+            flex-shrink: 0;
           }
 
-          .close-btn:hover {
+          .back-btn:hover {
             background: rgba(255, 255, 255, 0.14);
             color: #ffffff;
+            transform: translateX(-2px);
           }
 
-          .sheet-body {
+          .header-titles {
             flex: 1;
-            overflow-y: auto;
-            padding: 18px 20px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 2px;
+            min-width: 0;
+          }
+
+          .badge-mode {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #60a5fa;
+          }
+
+          .page-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .header-cancel-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+          }
+
+          .header-cancel-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.06);
+          }
+
+          .page-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 18px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            -webkit-overflow-scrolling: touch;
           }
 
           .error-banner {
@@ -1097,13 +1139,14 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             font-size: 12px;
           }
 
-          .sheet-footer {
-            padding: 16px 20px 24px 20px;
+          .page-footer {
+            padding: 14px 18px 18px 18px;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             flex-direction: column;
             gap: 10px;
-            background: #121217;
+            background: #0d0d12;
+            flex-shrink: 0;
           }
 
           .delete-area {
@@ -1375,7 +1418,6 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             justify-content: center;
           }
         `}</style>
-      </div>
     </div>
   );
 };

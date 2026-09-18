@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import {
   Plus,
@@ -55,6 +56,24 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 }) => {
   // Track expanded template cards to preview exercises
   const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(null);
+  // Track routine pending deletion for custom confirmation modal
+  const [routineToDelete, setRoutineToDelete] = useState<WorkoutRoutine | null>(null);
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+
+  useEffect(() => {
+    const container = document.querySelector('.app-container') || document.body;
+    setPortalTarget(container);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && routineToDelete) {
+        setRoutineToDelete(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [routineToDelete]);
 
   const toggleExpand = (routineId: string) => {
     setExpandedRoutineId((prev) => (prev === routineId ? null : routineId));
@@ -157,7 +176,11 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                     {totalMovements > 0 ? (
                       <div className="btn-toggle-movements">
                         <span>{totalMovements} EXERCISE{totalMovements === 1 ? '' : 'S'}</span>
-                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        {isExpanded ? (
+                          <ChevronUp size={14} className="toggle-chevron active" />
+                        ) : (
+                          <ChevronDown size={14} className="toggle-chevron" />
+                        )}
                       </div>
                     ) : (
                       <div className="empty-movements-row">
@@ -178,9 +201,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                               className="btn-card-action btn-delete-action"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (window.confirm(`Delete workout template "${r.title}"?`)) {
-                                  onDeleteRoutine(r.id);
-                                }
+                                setRoutineToDelete(r);
                               }}
                               title="Delete template"
                             >
@@ -192,94 +213,94 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                     )}
                   </div>
 
-                  {/* Expandable Exercise Sequence List */}
-                  {isExpanded && (
+                  {/* Expandable Exercise Sequence List with Smooth Expand & Collapse */}
+                  {totalMovements > 0 && (
                     <div
-                      className="expanded-exercises-list animate-slide-up"
+                      className={`expandable-drawer ${isExpanded ? 'is-expanded' : 'is-collapsed'}`}
+                      aria-hidden={!isExpanded}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {r.exercises.map((item, idx) => {
-                        const ex = getExerciseById(item.exerciseId);
-                        const exName = ex?.name || item.exerciseId;
-                        return (
-                          <div
-                            key={`${item.exerciseId}-${idx}`}
-                            className="expanded-exercise-row"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSelectRoutine(r.id);
-                              onSelectExerciseToStart(idx, r.id);
-                            }}
-                          >
-                            {ex?.thumbnailUrl && (
-                              <div className="ex-seq-thumb">
-                                <Image
-                                  src={ex.thumbnailUrl}
-                                  alt={exName}
-                                  width={44}
-                                  height={36}
-                                  className="thumb-img"
-                                  unoptimized
-                                />
+                      <div className="expandable-drawer-inner">
+                        <div className="expanded-exercises-list">
+                          {r.exercises.map((item, idx) => {
+                            const ex = getExerciseById(item.exerciseId);
+                            const exName = ex?.name || item.exerciseId;
+                            return (
+                              <div
+                                key={`${item.exerciseId}-${idx}`}
+                                className="expanded-exercise-row"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onSelectRoutine(r.id);
+                                  onSelectExerciseToStart(idx, r.id);
+                                }}
+                              >
+                                {ex?.thumbnailUrl && (
+                                  <div className="ex-seq-thumb">
+                                    <Image
+                                      src={ex.thumbnailUrl}
+                                      alt={exName}
+                                      width={44}
+                                      height={36}
+                                      className="thumb-img"
+                                      unoptimized
+                                    />
+                                  </div>
+                                )}
+                                <div className="ex-seq-info">
+                                  <span className="ex-seq-name">{exName}</span>
+                                  <div className="ex-seq-meta-row">
+                                    <span className="ex-seq-meta">
+                                      {item.targetSets} sets × {item.targetReps} reps
+                                    </span>
+                                    <span
+                                      className={`ex-weight-badge ${
+                                        item.targetWeightKg > 0 ? 'weighted' : 'bodyweight'
+                                      }`}
+                                    >
+                                      {item.targetWeightKg > 0
+                                        ? `${item.targetWeightKg} kg`
+                                        : 'Bodyweight'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <ChevronRight size={14} className="row-chevron" />
                               </div>
-                            )}
-                            <div className="ex-seq-info">
-                              <span className="ex-seq-name">{exName}</span>
-                              <div className="ex-seq-meta-row">
-                                <span className="ex-seq-meta">
-                                  {item.targetSets} sets × {item.targetReps} reps
-                                </span>
-                                <span
-                                  className={`ex-weight-badge ${
-                                    item.targetWeightKg > 0 ? 'weighted' : 'bodyweight'
-                                  }`}
+                            );
+                          })}
+
+                          {/* Actions below exercises list */}
+                          <div className="expanded-footer-bar">
+                            <div className="footer-action-buttons">
+                              <button
+                                type="button"
+                                className="btn-card-action"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenEditTemplate(r);
+                                }}
+                                title="Modify workout template"
+                                aria-label="Edit template"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+
+                              {allRoutines.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="btn-card-action btn-delete-action"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRoutineToDelete(r);
+                                  }}
+                                  title="Delete template"
+                                  aria-label="Delete template"
                                 >
-                                  {item.targetWeightKg > 0
-                                    ? `${item.targetWeightKg} kg`
-                                    : 'Bodyweight'}
-                                </span>
-                              </div>
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
                             </div>
-                            <ChevronRight size={14} className="row-chevron" />
                           </div>
-                        );
-                      })}
-
-                      {/* Actions below exercises list */}
-                      <div className="expanded-footer-bar">
-                        <span className="footer-summary-meta">
-                          {r.exercises.length} movement{r.exercises.length === 1 ? '' : 's'} • ~{r.estimatedMinutes} min
-                        </span>
-                        <div className="footer-action-buttons">
-                          <button
-                            type="button"
-                            className="btn-card-action"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenEditTemplate(r);
-                            }}
-                            title="Modify workout template"
-                            aria-label="Edit template"
-                          >
-                            <Edit3 size={13} />
-                          </button>
-
-                          {allRoutines.length > 1 && (
-                            <button
-                              type="button"
-                              className="btn-card-action btn-delete-action"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (window.confirm(`Delete workout template "${r.title}"?`)) {
-                                  onDeleteRoutine(r.id);
-                                }
-                              }}
-                              title="Delete template"
-                              aria-label="Delete template"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -290,6 +311,60 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal Dialog Portaled to App Container for Dead-Center Alignment */}
+      {routineToDelete && portalTarget && createPortal(
+        <div
+          className="delete-modal-backdrop"
+          style={{ position: portalTarget === document.body ? 'fixed' : 'absolute' }}
+          onClick={() => setRoutineToDelete(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+        >
+          <div
+            className="delete-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="delete-modal-icon-wrapper">
+              <Trash2 size={28} />
+            </div>
+
+            <h3 id="delete-dialog-title" className="delete-modal-title">
+              Delete Workout Template?
+            </h3>
+
+            <p className="delete-modal-desc">
+              Are you sure you want to delete{' '}
+              <span className="delete-modal-target-title">
+                &ldquo;{routineToDelete.title}&rdquo;
+              </span>
+              ? This action cannot be undone.
+            </p>
+
+            <div className="delete-modal-actions">
+              <button
+                type="button"
+                className="btn-delete-cancel"
+                onClick={() => setRoutineToDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-delete-confirm"
+                onClick={() => {
+                  onDeleteRoutine(routineToDelete.id);
+                  setRoutineToDelete(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        portalTarget
+      )}
 
       <style jsx>{`
         .templates-view {
@@ -340,7 +415,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           flex-direction: column;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-          transition: all 0.25s ease;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
         }
 
         .template-card:hover {
@@ -434,17 +509,13 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 16px;
-          background: transparent;
+          padding: 15px 16px;
+          background: rgba(0, 0, 0, 0.35);
           border-top: 1px solid rgba(255, 255, 255, 0.05);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          border-bottom: none;
           cursor: pointer;
           user-select: none;
-          transition: background 0.15s ease;
-        }
-
-        .movements-preview-bar:hover {
-          background: rgba(255, 255, 255, 0.03);
+          transition: all 0.15s ease;
         }
 
         .btn-toggle-movements {
@@ -459,18 +530,60 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           transition: color 0.15s ease;
         }
 
+        .toggle-chevron {
+          color: #94a3b8;
+          display: inline-flex;
+          transition: color 0.18s ease;
+        }
+
+        .toggle-chevron.active {
+          color: #ffffff;
+        }
+
         .movements-preview-bar:hover .btn-toggle-movements {
           color: #ffffff;
         }
 
+        /* Smooth Expand & Collapse Accordion Drawer */
+        .expandable-drawer {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+                      opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+                      visibility 0.52s;
+          opacity: 0;
+          visibility: hidden;
+          background: rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          will-change: grid-template-rows, opacity;
+        }
+
+        .expandable-drawer.is-expanded {
+          grid-template-rows: 1fr;
+          opacity: 1;
+          visibility: visible;
+          transition: grid-template-rows 0.54s cubic-bezier(0.22, 1, 0.36, 1),
+                      opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.04s;
+        }
+
+        .expandable-drawer-inner {
+          min-height: 0;
+          overflow: hidden;
+          transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+          transform: translateY(-8px);
+          will-change: transform;
+        }
+
+        .expandable-drawer.is-expanded .expandable-drawer-inner {
+          transform: translateY(0);
+        }
+
         /* Expanded Exercises List */
         .expanded-exercises-list {
-          padding: 12px 14px 14px 14px;
-          background: rgba(0, 0, 0, 0.35);
+          padding: 4px 14px 14px 14px;
           display: flex;
           flex-direction: column;
           gap: 8px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .empty-movements-row {
@@ -484,7 +597,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 8px 12px;
+          padding: 12px 14px;
           background: rgba(255, 255, 255, 0.035);
           border: 1px solid rgba(255, 255, 255, 0.065);
           border-radius: 14px;
@@ -588,29 +701,22 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         .expanded-footer-bar {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding-top: 8px;
-          margin-top: 4px;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .footer-summary-meta {
-          font-size: 11px;
-          font-weight: 500;
-          color: #64748b;
-          letter-spacing: 0.01em;
+          justify-content: flex-end;
+          padding-top: 6px;
+          margin-top: 2px;
+          border-top: none;
         }
 
         .footer-action-buttons {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 12px;
         }
 
         .card-actions-inline {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 12px;
         }
 
         .no-movements-text {
@@ -683,6 +789,132 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           border-color: rgba(59, 130, 246, 0.5);
           color: #93c5fd;
           transform: translateY(-1px);
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-modal-backdrop {
+          position: absolute;
+          inset: 0;
+          z-index: 9999;
+          background: rgba(0, 0, 0, 0.78);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          animation: modalFadeIn 0.2s ease-out;
+        }
+
+        .delete-modal-card {
+          width: 100%;
+          max-width: 350px;
+          background: #14141c;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 24px;
+          padding: 26px 22px 22px 22px;
+          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.85),
+                      0 0 0 1px rgba(255, 255, 255, 0.05);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          animation: modalScaleIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .delete-modal-icon-wrapper {
+          color: #ef4444;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 12px;
+        }
+
+        .delete-modal-title {
+          font-size: 17.5px;
+          font-weight: 800;
+          color: #ffffff;
+          margin: 0 0 8px 0;
+          letter-spacing: -0.01em;
+        }
+
+        .delete-modal-desc {
+          font-size: 13px;
+          line-height: 1.5;
+          color: #94a3b8;
+          margin: 0 0 22px 0;
+          max-width: 290px;
+        }
+
+        .delete-modal-target-title {
+          color: #ffffff;
+          font-weight: 700;
+        }
+
+        .delete-modal-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+        }
+
+        .btn-delete-cancel {
+          flex: 1;
+          padding: 12px 16px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #e2e8f0;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .btn-delete-cancel:hover {
+          background: rgba(255, 255, 255, 0.14);
+          color: #ffffff;
+        }
+
+        .btn-delete-confirm {
+          flex: 1;
+          padding: 12px 16px;
+          border-radius: 12px;
+          background: #ef4444;
+          border: 1px solid #f87171;
+          color: #ffffff;
+          font-size: 13.5px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: none;
+          transition: all 0.15s ease;
+        }
+
+        .btn-delete-confirm:hover {
+          background: #dc2626;
+          border-color: #ef4444;
+          transform: translateY(-1px);
+          box-shadow: none;
+        }
+
+        .btn-delete-confirm:active {
+          transform: translateY(0);
+        }
+
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes modalScaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.92) translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
       `}</style>
     </div>
