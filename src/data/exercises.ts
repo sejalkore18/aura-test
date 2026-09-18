@@ -243,6 +243,7 @@ export const DEFAULT_ROUTINES: WorkoutRoutine[] = [
     subtitle: 'Chest, Triceps, Shoulders & Push power',
     coverImage: '/workouts/upper-body.jpg',
     estimatedMinutes: 25,
+    estimatedCalories: 100,
     exercises: [
       {
         exerciseId: 'push-ups',
@@ -285,6 +286,7 @@ export const DEFAULT_ROUTINES: WorkoutRoutine[] = [
     subtitle: 'Quads, Hamstrings, Glutes & Core power',
     coverImage: '/workouts/lower-body.jpg',
     estimatedMinutes: 35,
+    estimatedCalories: 140,
     exercises: [
       {
         exerciseId: 'barbell-squat',
@@ -317,6 +319,7 @@ export const DEFAULT_ROUTINES: WorkoutRoutine[] = [
     subtitle: 'Compound pulling, Lats & Posterior chain',
     coverImage: '/workouts/full-body.jpg',
     estimatedMinutes: 30,
+    estimatedCalories: 120,
     exercises: [
       {
         exerciseId: 'pull-ups',

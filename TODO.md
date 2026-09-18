@@ -1,1 +1,0 @@
-Can the transition animation when the user switches be a little slower and smoother?

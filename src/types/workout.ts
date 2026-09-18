@@ -37,6 +37,7 @@ export interface WorkoutRoutine {
   title: string;
   subtitle?: string;
   estimatedMinutes: number;
+  estimatedCalories?: number;
   exercises: RoutineExercise[];
   isCustom?: boolean;
   coverImage?: string;

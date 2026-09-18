@@ -106,15 +106,16 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         ) : (
           <div className="templates-cards-grid">
             {allRoutines.map((r) => {
-              const isCurrent = r.id === routine.id;
               const coverImg = getRoutineCoverImage(r);
               const isExpanded = expandedRoutineId === r.id;
               const totalMovements = r.exercises?.length || 0;
+              const estimatedCalories =
+                r.estimatedCalories ?? Math.round((r.estimatedMinutes || 25) * 4);
 
               return (
                 <div
                   key={r.id}
-                  className={`template-card ${isCurrent ? 'is-active-template' : ''}`}
+                  className="template-card"
                   onClick={() => {
                     onSelectRoutine(r.id);
                     onStartWorkout(r.id);
@@ -144,7 +145,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                     {/* Floating Top Badges */}
                     <div className="banner-top-badges">
                       <div className="stat-pill-blur">
-                        <span>~{r.estimatedMinutes} min</span>
+                        <span>~{r.estimatedMinutes} min · {estimatedCalories} cal</span>
                       </div>
                     </div>
 
@@ -174,14 +175,51 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                     }}
                   >
                     {totalMovements > 0 ? (
-                      <div className="btn-toggle-movements">
-                        <span>{totalMovements} EXERCISE{totalMovements === 1 ? '' : 'S'}</span>
-                        {isExpanded ? (
-                          <ChevronUp size={14} className="toggle-chevron active" />
-                        ) : (
-                          <ChevronDown size={14} className="toggle-chevron" />
+                      <>
+                        <div className="btn-toggle-movements">
+                          <span>{totalMovements} EXERCISE{totalMovements === 1 ? '' : 'S'}</span>
+                          {isExpanded ? (
+                            <ChevronUp size={14} className="toggle-chevron active" />
+                          ) : (
+                            <ChevronDown size={14} className="toggle-chevron" />
+                          )}
+                        </div>
+
+                        {isExpanded && (
+                          <div
+                            className="card-actions-inline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="btn-card-action"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenEditTemplate(r);
+                              }}
+                              title="Modify workout template"
+                              aria-label="Edit template"
+                            >
+                              <Edit3 size={15} />
+                            </button>
+
+                            {allRoutines.length > 1 && (
+                              <button
+                                type="button"
+                                className="btn-card-action btn-delete-action"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRoutineToDelete(r);
+                                }}
+                                title="Delete template"
+                                aria-label="Delete template"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
                         )}
-                      </div>
+                      </>
                     ) : (
                       <div className="empty-movements-row">
                         <span className="no-movements-text">0 EXERCISES</span>
@@ -194,7 +232,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                             }}
                             title="Modify workout template"
                           >
-                            <Edit3 size={13} />
+                            <Edit3 size={15} />
                           </button>
                           {allRoutines.length > 1 && (
                             <button
@@ -205,7 +243,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                               }}
                               title="Delete template"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={15} />
                             </button>
                           )}
                         </div>
@@ -240,8 +278,8 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                                     <Image
                                       src={ex.thumbnailUrl}
                                       alt={exName}
-                                      width={44}
-                                      height={36}
+                                      width={54}
+                                      height={44}
                                       className="thumb-img"
                                       unoptimized
                                     />
@@ -268,39 +306,6 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                               </div>
                             );
                           })}
-
-                          {/* Actions below exercises list */}
-                          <div className="expanded-footer-bar">
-                            <div className="footer-action-buttons">
-                              <button
-                                type="button"
-                                className="btn-card-action"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenEditTemplate(r);
-                                }}
-                                title="Modify workout template"
-                                aria-label="Edit template"
-                              >
-                                <Edit3 size={13} />
-                              </button>
-
-                              {allRoutines.length > 1 && (
-                                <button
-                                  type="button"
-                                  className="btn-card-action btn-delete-action"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRoutineToDelete(r);
-                                  }}
-                                  title="Delete template"
-                                  aria-label="Delete template"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -331,15 +336,15 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
             </div>
 
             <h3 id="delete-dialog-title" className="delete-modal-title">
-              Delete Workout Template?
+              Delete Workout
             </h3>
 
             <p className="delete-modal-desc">
               Are you sure you want to delete{' '}
               <span className="delete-modal-target-title">
-                &ldquo;{routineToDelete.title}&rdquo;
+                {routineToDelete.title}
               </span>
-              ? This action cannot be undone.
+              ? 
             </p>
 
             <div className="delete-modal-actions">
@@ -415,18 +420,20 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           flex-direction: column;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-          transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+          outline: none;
+          transition: box-shadow 0.25s ease, transform 0.25s ease;
         }
 
         .template-card:hover {
-          border-color: rgba(255, 255, 255, 0.18);
           transform: translateY(-2px);
           box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
         }
 
-        .template-card.is-active-template {
-          border-color: rgba(59, 130, 246, 0.45);
-          box-shadow: 0 8px 28px rgba(37, 99, 235, 0.2);
+        .template-card:focus,
+        .template-card:focus-visible,
+        .template-card:active {
+          outline: none;
+          border-color: rgba(255, 255, 255, 0.09);
         }
 
         /* Banner */
@@ -509,7 +516,8 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 15px 16px;
+          padding: 10px 16px;
+          min-height: 50px;
           background: rgba(0, 0, 0, 0.35);
           border-top: 1px solid rgba(255, 255, 255, 0.05);
           border-bottom: none;
@@ -527,21 +535,15 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           font-weight: 700;
           letter-spacing: 0.07em;
           white-space: nowrap;
-          transition: color 0.15s ease;
         }
 
         .toggle-chevron {
           color: #94a3b8;
           display: inline-flex;
-          transition: color 0.18s ease;
         }
 
         .toggle-chevron.active {
-          color: #ffffff;
-        }
-
-        .movements-preview-bar:hover .btn-toggle-movements {
-          color: #ffffff;
+          color: #94a3b8;
         }
 
         /* Smooth Expand & Collapse Accordion Drawer */
@@ -617,9 +619,9 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         }
 
         .ex-seq-thumb {
-          width: 44px;
-          height: 36px;
-          border-radius: 9px;
+          width: 54px;
+          height: 44px;
+          border-radius: 10px;
           overflow: hidden;
           background: rgba(255, 255, 255, 0.04);
           border: 1px solid rgba(255, 255, 255, 0.09);
@@ -697,26 +699,22 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           transform: translateX(2px);
         }
 
-        /* Footer Action Bar */
-        .expanded-footer-bar {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          padding-top: 6px;
-          margin-top: 2px;
-          border-top: none;
-        }
-
-        .footer-action-buttons {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
         .card-actions-inline {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
+          animation: fadeInActions 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInActions {
+          from {
+            opacity: 0;
+            transform: scale(0.92);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
 
         .no-movements-text {
@@ -726,40 +724,39 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         }
 
         .btn-card-action {
-          width: 30px;
-          height: 30px;
+          width: 26px;
+          height: 26px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 9px;
-          color: #cbd5e1;
+          background: transparent;
+          border: none;
+          padding: 0;
+          color: #94a3b8;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: color 0.15s ease, transform 0.15s ease;
         }
 
         .btn-card-action:hover {
-          background: rgba(255, 255, 255, 0.12);
-          border-color: rgba(255, 255, 255, 0.2);
+          background: transparent;
           color: #ffffff;
-          transform: translateY(-1px);
+          transform: scale(1.12);
         }
 
         .btn-card-action:active {
-          transform: translateY(0);
+          transform: scale(0.95);
         }
 
         .btn-delete-action {
-          color: #f87171;
-          background: rgba(239, 68, 68, 0.08);
-          border-color: rgba(239, 68, 68, 0.18);
+          color: rgba(248, 113, 113, 0.72);
+          background: transparent;
+          border: none;
         }
 
         .btn-delete-action:hover {
-          background: rgba(239, 68, 68, 0.2);
-          border-color: rgba(239, 68, 68, 0.35);
-          color: #fca5a5;
+          background: transparent;
+          color: #f87171;
+          transform: scale(1.12);
         }
 
         /* Top Action Bar */
@@ -812,7 +809,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           background: #14141c;
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 24px;
-          padding: 26px 22px 22px 22px;
+          padding: 28px 22px 24px 22px;
           box-shadow: 0 24px 50px rgba(0, 0, 0, 0.85),
                       0 0 0 1px rgba(255, 255, 255, 0.05);
           display: flex;
@@ -823,18 +820,18 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         }
 
         .delete-modal-icon-wrapper {
-          color: #ef4444;
+          color: #e05d5d;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 12px;
+          margin-bottom: 18px;
         }
 
         .delete-modal-title {
           font-size: 17.5px;
           font-weight: 800;
           color: #ffffff;
-          margin: 0 0 8px 0;
+          margin: 0 0 12px 0;
           letter-spacing: -0.01em;
         }
 
@@ -842,7 +839,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           font-size: 13px;
           line-height: 1.5;
           color: #94a3b8;
-          margin: 0 0 22px 0;
+          margin: 0 0 26px 0;
           max-width: 290px;
         }
 
@@ -880,19 +877,19 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           flex: 1;
           padding: 12px 16px;
           border-radius: 12px;
-          background: #ef4444;
-          border: 1px solid #f87171;
+          background: #9f2424;
+          border: 1px solid rgba(248, 113, 113, 0.28);
           color: #ffffff;
           font-size: 13.5px;
-          font-weight: 700;
+          font-weight: 600;
           cursor: pointer;
           box-shadow: none;
           transition: all 0.15s ease;
         }
 
         .btn-delete-confirm:hover {
-          background: #dc2626;
-          border-color: #ef4444;
+          background: #b91c1c;
+          border-color: rgba(248, 113, 113, 0.45);
           transform: translateY(-1px);
           box-shadow: none;
         }

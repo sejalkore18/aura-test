@@ -180,6 +180,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       id: routineId,
       title: title.trim(),
       estimatedMinutes,
+      estimatedCalories: Math.round(estimatedMinutes * 4),
       exercises,
       isCustom: true,
       coverImage,
@@ -353,8 +354,8 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                             <Image
                               src={ex.thumbnailUrl}
                               alt={exName}
-                              width={44}
-                              height={34}
+                              width={52}
+                              height={40}
                               className="thumb-img"
                               unoptimized
                             />
@@ -989,9 +990,9 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .thumb-container {
-            width: 44px;
-            height: 34px;
-            border-radius: 8px;
+            width: 52px;
+            height: 40px;
+            border-radius: 9px;
             overflow: hidden;
             background: #000;
             flex-shrink: 0;
@@ -1160,17 +1161,18 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             gap: 6px;
             background: transparent;
             border: none;
-            color: #ef4444;
+            color: #e05d5d;
             font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
             padding: 6px 12px;
             border-radius: 8px;
-            transition: background 0.15s ease;
+            transition: background 0.15s ease, color 0.15s ease;
           }
 
           .btn-delete-workout:hover {
-            background: rgba(239, 68, 68, 0.12);
+            background: rgba(239, 68, 68, 0.08);
+            color: #f87171;
           }
 
           .confirm-delete-row {
