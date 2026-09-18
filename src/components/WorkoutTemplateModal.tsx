@@ -7,8 +7,7 @@ import {
   X,
   Plus,
   Trash2,
-  ChevronUp,
-  ChevronDown,
+  GripVertical,
   Dumbbell,
   Clock,
   Layers,
@@ -47,12 +46,38 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
   onDelete,
 }) => {
   const [title, setTitle] = useState('');
-  const [exercises, setExercises] = useState<RoutineExercise[]>([]);
+  const [exercises, setExercises] = useState<(RoutineExercise & { _uid?: string })[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragTranslateY, setDragTranslateY] = useState(0);
+  const [dragItemHeight, setDragItemHeight] = useState(120);
+  const [isDraggingActive, setIsDraggingActive] = useState(false);
+  const [isDropping, setIsDropping] = useState(false);
+
+  const dragItemRef = React.useRef<number | null>(null);
+  const dragOverRef = React.useRef<number | null>(null);
+  const isDraggingActiveRef = React.useRef(false);
+  const isDroppingRef = React.useRef(false);
+  const dropTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  // Swipe-to-delete state
+  const [swipingIndex, setSwipingIndex] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipingCardWidth, setSwipingCardWidth] = useState(360);
+  const [isSwipingActive, setIsSwipingActive] = useState(false);
+  const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
+  const swipeStartRef = React.useRef<{
+    x: number;
+    y: number;
+    locked: 'h' | 'v' | null;
+    startIndex: number;
+    cardWidth: number;
+  } | null>(null);
 
   // Sync state when opened or initialRoutine changes
   useEffect(() => {
@@ -60,8 +85,9 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       if (mode === 'edit' && initialRoutine) {
         setTitle(initialRoutine.title);
         setExercises(
-          initialRoutine.exercises.map((ex) => ({
+          initialRoutine.exercises.map((ex, i) => ({
             ...ex,
+            _uid: `uid-${ex.exerciseId}-${i}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
             sets: [...ex.sets],
           }))
         );
@@ -70,10 +96,27 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         setExercises([]);
       }
       setShowExercisePicker(false);
-      setShowDeleteConfirm(false);
       setErrorMessage('');
       setSearchQuery('');
       setSelectedCategory('all');
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+      setDragTranslateY(0);
+      setIsDraggingActive(false);
+      setIsDropping(false);
+      if (dropTimerRef.current) {
+        clearTimeout(dropTimerRef.current);
+        dropTimerRef.current = null;
+      }
+      dragItemRef.current = null;
+      dragOverRef.current = null;
+      isDraggingActiveRef.current = false;
+      isDroppingRef.current = false;
+      setSwipingIndex(null);
+      setSwipeOffset(0);
+      setIsSwipingActive(false);
+      setDeletingIndex(null);
+      swipeStartRef.current = null;
     }
   }, [isOpen, mode, initialRoutine]);
 
@@ -112,18 +155,150 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     });
   };
 
-  // Reorder exercises
-  const handleMoveExercise = (index: number, direction: 'up' | 'down') => {
-    const targetIdx = direction === 'up' ? index - 1 : index + 1;
-    if (targetIdx < 0 || targetIdx >= exercises.length) return;
+  // Reorder exercises via drag and drop
+  const handleReorderExercises = (fromIndex: number, toIndex: number) => {
+    if (
+      fromIndex === toIndex ||
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= exercises.length ||
+      toIndex >= exercises.length
+    )
+      return;
 
     setExercises((prev) => {
       const copy = [...prev];
-      const temp = copy[index];
-      copy[index] = copy[targetIdx];
-      copy[targetIdx] = temp;
+      const [movedItem] = copy.splice(fromIndex, 1);
+      copy.splice(toIndex, 0, movedItem);
       return copy;
     });
+  };
+
+  const handlePointerDownHandle = (
+    index: number,
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (e.button !== 0 || isDroppingRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (dropTimerRef.current) {
+      clearTimeout(dropTimerRef.current);
+      dropTimerRef.current = null;
+    }
+
+    // Cancel any active swipe immediately
+    setSwipingIndex(null);
+    setSwipeOffset(0);
+
+    const container = listRef.current;
+    if (!container) return;
+
+    const cardWrappers = Array.from(
+      container.querySelectorAll<HTMLElement>('.swipe-card-wrapper')
+    );
+    if (cardWrappers.length <= 1) return;
+
+    // Snapshot undisturbed card centers and heights at the moment drag starts
+    const slotCenters = cardWrappers.map((wrapper) => {
+      const rect = wrapper.getBoundingClientRect();
+      return rect.top + rect.height / 2;
+    });
+
+    const currentCardRect = cardWrappers[index]?.getBoundingClientRect();
+    const measuredSlotHeight = (currentCardRect?.height || 110) + 10;
+    setDragItemHeight(measuredSlotHeight);
+
+    const startClientY = e.clientY;
+    dragItemRef.current = index;
+    dragOverRef.current = index;
+    isDraggingActiveRef.current = true;
+    isDroppingRef.current = false;
+    setIsDropping(false);
+
+    setDraggedIdx(index);
+    setDragOverIdx(index);
+    setDragTranslateY(0);
+    setIsDraggingActive(true);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isDraggingActiveRef.current || isDroppingRef.current) return;
+      moveEvent.preventDefault();
+
+      const dy = moveEvent.clientY - startClientY;
+      setDragTranslateY(dy);
+
+      const currentMidY = slotCenters[index] + dy;
+
+      // Find closest slot center
+      let closestIdx = index;
+      let minDistance = Infinity;
+      for (let i = 0; i < slotCenters.length; i++) {
+        const dist = Math.abs(currentMidY - slotCenters[i]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = i;
+        }
+      }
+
+      closestIdx = Math.max(0, Math.min(slotCenters.length - 1, closestIdx));
+
+      if (dragOverRef.current !== closestIdx) {
+        dragOverRef.current = closestIdx;
+        setDragOverIdx(closestIdx);
+      }
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      upEvent.preventDefault();
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+
+      const from = dragItemRef.current;
+      const to = dragOverRef.current;
+
+      if (from === null || to === null) {
+        isDraggingActiveRef.current = false;
+        dragItemRef.current = null;
+        dragOverRef.current = null;
+        setDraggedIdx(null);
+        setDragOverIdx(null);
+        setDragTranslateY(0);
+        setIsDraggingActive(false);
+        return;
+      }
+
+      // Calculate exact drop landing translation offset relative to initial position
+      const landingY = (slotCenters[to] ?? slotCenters[from]) - slotCenters[from];
+
+      // Initiate smooth landing drop animation
+      isDroppingRef.current = true;
+      setIsDropping(true);
+      setDragTranslateY(landingY);
+
+      dropTimerRef.current = setTimeout(() => {
+        if (from !== to) {
+          handleReorderExercises(from, to);
+        }
+
+        isDroppingRef.current = false;
+        isDraggingActiveRef.current = false;
+        dragItemRef.current = null;
+        dragOverRef.current = null;
+
+        setDraggedIdx(null);
+        setDragOverIdx(null);
+        setDragTranslateY(0);
+        setIsDraggingActive(false);
+        setIsDropping(false);
+        dropTimerRef.current = null;
+      }, 240);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onPointerUp, { passive: false });
+    window.addEventListener('pointercancel', onPointerUp, { passive: false });
   };
 
   // Remove exercise from sequence
@@ -131,9 +306,134 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     setExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Swipe-to-delete trigger with smooth exit animation
+  const handleTriggerDelete = (index: number) => {
+    setDeletingIndex(index);
+    setTimeout(() => {
+      setExercises((prev) => prev.filter((_, i) => i !== index));
+      setDeletingIndex(null);
+      setSwipingIndex(null);
+      setSwipeOffset(0);
+    }, 240);
+  };
+
+  const handleSwipeStart = (
+    index: number,
+    clientX: number,
+    clientY: number,
+    target: HTMLElement
+  ): boolean => {
+    if (
+      target.closest('.drag-handle, button, input, .step-btn') ||
+      isDraggingActiveRef.current ||
+      isDroppingRef.current
+    ) {
+      return false;
+    }
+    const cardWrapper = target.closest<HTMLElement>('.swipe-card-wrapper');
+    const width = cardWrapper?.offsetWidth || 360;
+    setSwipingCardWidth(width);
+
+    swipeStartRef.current = {
+      x: clientX,
+      y: clientY,
+      locked: null,
+      startIndex: index,
+      cardWidth: width,
+    };
+    if (swipingIndex !== null && swipingIndex !== index) {
+      setSwipingIndex(null);
+      setSwipeOffset(0);
+    }
+    return true;
+  };
+
+  const handleSwipeMove = (clientX: number, clientY: number) => {
+    if (!swipeStartRef.current) return;
+    const { x, y, startIndex, cardWidth } = swipeStartRef.current;
+    const dx = clientX - x;
+    const dy = clientY - y;
+
+    if (swipeStartRef.current.locked === null) {
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+        if (Math.abs(dx) > Math.abs(dy) + 2) {
+          swipeStartRef.current.locked = 'h';
+        } else {
+          swipeStartRef.current.locked = 'v';
+        }
+      }
+    }
+
+    if (swipeStartRef.current.locked === 'h') {
+      if (dx <= 0) {
+        setSwipingIndex(startIndex);
+        setIsSwipingActive(true);
+        // Allow smooth swiping across full width, slight resistance only past full width
+        const maxSlide = -cardWidth;
+        const clamped = dx < maxSlide ? maxSlide + (dx - maxSlide) * 0.2 : dx;
+        setSwipeOffset(clamped);
+      } else if (swipingIndex === startIndex) {
+        setSwipeOffset(0);
+      }
+    }
+  };
+
+  const handleSwipeEnd = () => {
+    if (!swipeStartRef.current) return;
+    const { startIndex, locked, cardWidth } = swipeStartRef.current;
+    setIsSwipingActive(false);
+
+    if (locked === 'h' && swipingIndex === startIndex) {
+      // Only delete if shifted more than 70% of tile width to the left
+      const deleteThreshold = cardWidth * 0.7;
+      if (Math.abs(swipeOffset) >= deleteThreshold) {
+        handleTriggerDelete(startIndex);
+      } else {
+        // Shifted less than 70% -> smoothly snap back to 0
+        setSwipeOffset(0);
+        setSwipingIndex(null);
+      }
+    }
+    swipeStartRef.current = null;
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const shouldStart = handleSwipeStart(index, e.clientX, e.clientY, e.target as HTMLElement);
+    if (!shouldStart) return;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      handleSwipeMove(moveEvent.clientX, moveEvent.clientY);
+    };
+
+    const onMouseUp = () => {
+      handleSwipeEnd();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleTouchStart = (index: number, e: React.TouchEvent<HTMLDivElement>) => {
+    handleSwipeStart(index, e.touches[0].clientX, e.touches[0].clientY, e.target as HTMLElement);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    handleSwipeEnd();
+  };
+
   // Add exercise from picker
   const handleAddExerciseFromPicker = (ex: Exercise) => {
-    const newRoutineEx: RoutineExercise = {
+    const newRoutineEx: RoutineExercise & { _uid?: string } = {
+      _uid: `uid-${ex.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       exerciseId: ex.id,
       targetSets: ex.defaultSets || 3,
       targetReps: ex.defaultReps || 10,
@@ -181,7 +481,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       title: title.trim(),
       estimatedMinutes,
       estimatedCalories: Math.round(estimatedMinutes * 4),
-      exercises,
+      exercises: exercises.map(({ _uid, ...rest }) => rest),
       isCustom: true,
       coverImage,
     };
@@ -225,23 +525,11 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           aria-label="Go Back"
           title="Go Back"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
-        <div className="header-titles">
-          <span className="badge-mode">
-            {mode === 'create' ? 'New Workout Template' : 'Edit Template'}
-          </span>
-          <h1 className="page-title">
-            {mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
-          </h1>
-        </div>
-        <button
-          type="button"
-          className="header-cancel-btn"
-          onClick={onClose}
-        >
-          Cancel
-        </button>
+        <h1 className="page-title">
+          {mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
+        </h1>
       </header>
 
       {/* Content Body */}
@@ -312,9 +600,6 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           {/* Exercises Sequence Section */}
           <div className="exercises-section">
             <div className="section-header-row">
-              <h3 className="section-title">
-                Exercise Sequence ({exercises.length})
-              </h3>
               <button
                 type="button"
                 className="add-exercise-trigger-btn"
@@ -336,161 +621,241 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="exercise-cards-list">
+              <div
+                ref={listRef}
+                className={`exercise-cards-list ${isDraggingActive ? 'is-dragging-active' : ''}`}
+              >
                 {exercises.map((item, idx) => {
                   const ex = getExerciseById(item.exerciseId);
                   const exName = ex?.name || item.exerciseId;
-                  const isFirst = idx === 0;
-                  const isLast = idx === exercises.length - 1;
+                  const isThisDragging = isDraggingActive && draggedIdx === idx;
+                  const isThisDropping = isThisDragging && isDropping;
+
+                  // Calculate smooth slot displacement for neighboring cards
+                  let shiftY = 0;
+                  if (
+                    isDraggingActive &&
+                    draggedIdx !== null &&
+                    dragOverIdx !== null &&
+                    draggedIdx !== dragOverIdx
+                  ) {
+                    if (draggedIdx < dragOverIdx) {
+                      if (idx > draggedIdx && idx <= dragOverIdx) {
+                        shiftY = -dragItemHeight;
+                      }
+                    } else if (draggedIdx > dragOverIdx) {
+                      if (idx >= dragOverIdx && idx < draggedIdx) {
+                        shiftY = dragItemHeight;
+                      }
+                    }
+                  }
+
+                  const isSwipeActive =
+                    (swipingIndex === idx && swipeOffset < 0) || deletingIndex === idx;
+                  const deleteThreshold = swipingCardWidth > 0 ? swipingCardWidth * 0.7 : 240;
+                  const isPast70Percent =
+                    swipingIndex === idx && Math.abs(swipeOffset) >= deleteThreshold;
 
                   return (
-                    <div key={`${item.exerciseId}-${idx}`} className="exercise-config-card">
-                      {/* Top Row: Index, Thumbnail, Name, Reorder, Delete */}
-                      <div className="card-top-row">
-                        <div className="sequence-badge">{idx + 1}</div>
-
-                        {ex?.thumbnailUrl && (
-                          <div className="thumb-container">
-                            <Image
-                              src={ex.thumbnailUrl}
-                              alt={exName}
-                              width={52}
-                              height={40}
-                              className="thumb-img"
-                              unoptimized
+                    <div
+                      key={item._uid || `${item.exerciseId}-${idx}`}
+                      className={`swipe-card-wrapper ${deletingIndex === idx ? 'is-deleting' : ''} ${
+                        isThisDragging ? 'wrapper-dragging' : ''
+                      } ${isThisDropping ? 'wrapper-dropping' : ''}`}
+                      data-index={idx}
+                      style={{
+                        transform: isThisDragging
+                          ? `translateY(${dragTranslateY}px)`
+                          : shiftY !== 0
+                          ? `translateY(${shiftY}px)`
+                          : 'translateY(0)',
+                        zIndex: isThisDragging ? 100 : 1,
+                        transition: isThisDragging
+                          ? isDropping
+                            ? 'transform 0.24s cubic-bezier(0.18, 1, 0.22, 1)'
+                            : 'none'
+                          : isDraggingActive
+                          ? 'transform 0.28s cubic-bezier(0.2, 0, 0, 1)'
+                          : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.25s ease, opacity 0.2s ease',
+                      }}
+                    >
+                      {/* Swipe Delete Background Action (rendered only when actively swiping or deleting) */}
+                      {isSwipeActive && (
+                        <div
+                          className={`swipe-delete-action ${
+                            isPast70Percent ? 'ready-delete' : ''
+                          }`}
+                          onClick={() => handleTriggerDelete(idx)}
+                        >
+                          <div className="swipe-delete-content">
+                            <Trash2
+                              size={20}
+                              color="#9ca3af"
+                              className={`swipe-trash-icon ${isPast70Percent ? 'ready' : ''}`}
                             />
-                          </div>
-                        )}
-
-                        <div className="card-titles">
-                          <span className="ex-name">{exName}</span>
-                          <span className="ex-cat">
-                            {ex?.category ? ex.category.toUpperCase() : 'EXERCISE'} ·{' '}
-                            {ex?.equipment || 'Freeweights'}
-                          </span>
-                        </div>
-
-                        {/* Reorder and Delete */}
-                        <div className="card-actions">
-                          <div className="reorder-btns">
-                            <button
-                              type="button"
-                              className="btn-order"
-                              disabled={isFirst}
-                              onClick={() => handleMoveExercise(idx, 'up')}
-                              title="Move up in sequence"
-                            >
-                              <ChevronUp size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-order"
-                              disabled={isLast}
-                              onClick={() => handleMoveExercise(idx, 'down')}
-                              title="Move down in sequence"
-                            >
-                              <ChevronDown size={14} />
-                            </button>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="btn-trash"
-                            onClick={() => handleRemoveExercise(idx)}
-                            title="Remove from workout"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Bottom Row: Set, Rep, and Weight Steppers */}
-                      <div className="steppers-grid">
-                        {/* Sets Stepper */}
-                        <div className="stepper-item">
-                          <span className="stepper-label">Sets</span>
-                          <div className="stepper-control">
-                            <button
-                              type="button"
-                              className="step-btn"
-                              onClick={() =>
-                                handleUpdateExercise(idx, 'targetSets', item.targetSets - 1)
-                              }
-                            >
-                              -
-                            </button>
-                            <span className="step-val">{item.targetSets}</span>
-                            <button
-                              type="button"
-                              className="step-btn"
-                              onClick={() =>
-                                handleUpdateExercise(idx, 'targetSets', item.targetSets + 1)
-                              }
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Reps Stepper */}
-                        <div className="stepper-item">
-                          <span className="stepper-label">Reps</span>
-                          <div className="stepper-control">
-                            <button
-                              type="button"
-                              className="step-btn"
-                              onClick={() =>
-                                handleUpdateExercise(idx, 'targetReps', item.targetReps - 1)
-                              }
-                            >
-                              -
-                            </button>
-                            <span className="step-val">{item.targetReps}</span>
-                            <button
-                              type="button"
-                              className="step-btn"
-                              onClick={() =>
-                                handleUpdateExercise(idx, 'targetReps', item.targetReps + 1)
-                              }
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Weight Stepper */}
-                        <div className="stepper-item weight-stepper">
-                          <span className="stepper-label">Weight</span>
-                          <div className="stepper-control">
-                            <button
-                              type="button"
-                              className="step-btn"
-                              onClick={() =>
-                                handleUpdateExercise(
-                                  idx,
-                                  'targetWeightKg',
-                                  Math.max(0, item.targetWeightKg - 2.5)
-                                )
-                              }
-                            >
-                              -
-                            </button>
-                            <span className="step-val weight-val">
-                              {item.targetWeightKg > 0 ? `${item.targetWeightKg}kg` : 'BW'}
+                            <span className="swipe-delete-label">
+                              {isPast70Percent ? 'Release to Delete' : 'Slide to Delete'}
                             </span>
-                            <button
-                              type="button"
-                              className="step-btn"
-                              onClick={() =>
-                                handleUpdateExercise(
-                                  idx,
-                                  'targetWeightKg',
-                                  item.targetWeightKg + 2.5
-                                )
-                              }
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Foreground Exercise Config Card */}
+                      <div
+                        className={`exercise-config-card ${isThisDragging ? 'is-dragging' : ''} ${
+                          isThisDropping ? 'is-dropping' : ''
+                        }`}
+                        data-index={idx}
+                        style={{
+                          transform:
+                            deletingIndex === idx
+                              ? 'translateX(-100%)'
+                              : swipingIndex === idx
+                              ? `translateX(${swipeOffset}px)`
+                              : 'translateX(0)',
+                          transition:
+                            isSwipingActive && swipingIndex === idx
+                              ? 'none'
+                              : 'transform 0.26s cubic-bezier(0.18, 1, 0.22, 1), opacity 0.24s ease',
+                          pointerEvents: isThisDragging ? 'none' : 'auto',
+                        }}
+                        onMouseDown={(e) => handleMouseDown(idx, e)}
+                        onTouchStart={(e) => handleTouchStart(idx, e)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onClick={() => {
+                          if (swipingIndex === idx && swipeOffset < 0) {
+                            setSwipeOffset(0);
+                            setSwipingIndex(null);
+                          }
+                        }}
+                      >
+                        {/* Top Row: Thumbnail, Name, Drag Handle */}
+                        <div className="card-top-row">
+                          {ex?.thumbnailUrl && (
+                            <div className="thumb-container">
+                              <Image
+                                src={ex.thumbnailUrl}
+                                alt={exName}
+                                width={52}
+                                height={40}
+                                className="thumb-img"
+                                unoptimized
+                              />
+                            </div>
+                          )}
+
+                          <div className="card-titles">
+                            <span className="ex-name">{exName}</span>
+                            <span className="ex-cat">
+                              {ex?.category ? ex.category.toUpperCase() : 'EXERCISE'} ·{' '}
+                              {ex?.equipment || 'Freeweights'}
+                            </span>
+                          </div>
+
+                          {/* Drag Handle */}
+                          <div className="card-actions">
+                            <div
+                              className={`drag-handle ${
+                                isThisDragging && !isThisDropping ? 'is-active' : ''
+                              }`}
+                              onPointerDown={(e) => handlePointerDownHandle(idx, e)}
+                              title="Drag to reorder"
+                              aria-label="Drag to reorder"
                             >
-                              +
-                            </button>
+                              <GripVertical size={16} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bottom Row: Set, Rep, and Weight Steppers */}
+                        <div className="steppers-grid">
+                          {/* Sets Stepper */}
+                          <div className="stepper-item">
+                            <span className="stepper-label">Sets</span>
+                            <div className="stepper-control">
+                              <button
+                                type="button"
+                                className="step-btn"
+                                onClick={() =>
+                                  handleUpdateExercise(idx, 'targetSets', item.targetSets - 1)
+                                }
+                              >
+                                -
+                              </button>
+                              <span className="step-val">{item.targetSets}</span>
+                              <button
+                                type="button"
+                                className="step-btn"
+                                onClick={() =>
+                                  handleUpdateExercise(idx, 'targetSets', item.targetSets + 1)
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Reps Stepper */}
+                          <div className="stepper-item">
+                            <span className="stepper-label">Reps</span>
+                            <div className="stepper-control">
+                              <button
+                                type="button"
+                                className="step-btn"
+                                onClick={() =>
+                                  handleUpdateExercise(idx, 'targetReps', item.targetReps - 1)
+                                }
+                              >
+                                -
+                              </button>
+                              <span className="step-val">{item.targetReps}</span>
+                              <button
+                                type="button"
+                                className="step-btn"
+                                onClick={() =>
+                                  handleUpdateExercise(idx, 'targetReps', item.targetReps + 1)
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Weight Stepper */}
+                          <div className="stepper-item weight-stepper">
+                            <span className="stepper-label">Weight</span>
+                            <div className="stepper-control">
+                              <button
+                                type="button"
+                                className="step-btn"
+                                onClick={() =>
+                                  handleUpdateExercise(
+                                    idx,
+                                    'targetWeightKg',
+                                    Math.max(0, item.targetWeightKg - 2.5)
+                                  )
+                                }
+                              >
+                                -
+                              </button>
+                              <span className="step-val weight-val">
+                                {item.targetWeightKg > 0 ? `${item.targetWeightKg}kg` : 'BW'}
+                              </span>
+                              <button
+                                type="button"
+                                className="step-btn"
+                                onClick={() =>
+                                  handleUpdateExercise(
+                                    idx,
+                                    'targetWeightKg',
+                                    item.targetWeightKg + 2.5
+                                  )
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -504,54 +869,13 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
         {/* Footer Actions */}
         <footer className="page-footer">
-          {mode === 'edit' && onDelete && (
-            <div className="delete-area">
-              {showDeleteConfirm ? (
-                <div className="confirm-delete-row">
-                  <span className="confirm-text">Are you sure?</span>
-                  <button
-                    type="button"
-                    className="btn-confirm-delete"
-                    onClick={() => {
-                      if (initialRoutine) onDelete(initialRoutine.id);
-                    }}
-                  >
-                    Yes, Delete
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-cancel-delete"
-                    onClick={() => setShowDeleteConfirm(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-delete-workout"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  <Trash2 size={16} />
-                  <span>Delete Template</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          <div className="main-actions-row">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn-save-template"
-              onClick={handleSave}
-            >
-              <Check size={18} />
-              <span>{mode === 'create' ? 'Create Template' : 'Save Changes'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-save-template"
+            onClick={handleSave}
+          >
+            <span>{mode === 'create' ? 'Create Template' : 'Save'}</span>
+          </button>
         </footer>
 
         {/* Exercise Picker Overlay Sheet */}
@@ -669,77 +993,56 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .page-header {
             display: flex;
             align-items: center;
-            padding: 16px 18px;
-            background: #0d0d12;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            gap: 12px;
+            height: 56px;
+            padding: 0 16px;
+            background: rgba(8, 8, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            gap: 8px;
             flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 70;
           }
 
           .back-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #f3f4f6;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 36px;
+            height: 36px;
+            color: #ffffff;
+            background: transparent;
+            border: none;
+            box-shadow: none;
             cursor: pointer;
-            transition: all 0.18s ease;
+            transition: all 0.2s ease;
             flex-shrink: 0;
           }
 
           .back-btn:hover {
-            background: rgba(255, 255, 255, 0.14);
-            color: #ffffff;
-            transform: translateX(-2px);
+            background: transparent;
+            transform: translateX(-3px);
+            opacity: 0.8;
           }
 
-          .header-titles {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
-          }
-
-          .badge-mode {
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #60a5fa;
+          .back-btn:active {
+            transform: scale(0.92) translateX(-3px);
+            opacity: 0.65;
           }
 
           .page-title {
-            font-size: 18px;
-            font-weight: 800;
+            font-family: var(--font-display);
+            font-size: 1.08rem;
+            font-weight: 700;
             color: #ffffff;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.015em;
             margin: 0;
+            line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-          }
-
-          .header-cancel-btn {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 13.5px;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
-            transition: all 0.15s ease;
-            flex-shrink: 0;
-          }
-
-          .header-cancel-btn:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.06);
           }
 
           .page-body {
@@ -838,17 +1141,17 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             display: flex;
             align-items: center;
             justify-content: space-around;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 14px;
+            padding: 6px 4px;
+            margin-bottom: 14px;
+            background: transparent;
+            border: none;
           }
 
           .stat-item {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 12px;
+            font-size: 12.5px;
             font-weight: 600;
             color: #d1d5db;
           }
@@ -866,19 +1169,13 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .exercises-section {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
           }
 
           .section-header-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-          }
-
-          .section-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #f3f4f6;
           }
 
           .add-exercise-trigger-btn {
@@ -959,34 +1256,163 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             gap: 10px;
           }
 
+          .swipe-card-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            max-height: 240px;
+            opacity: 1;
+            background: transparent;
+            transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.2s ease,
+                        margin-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          .swipe-card-wrapper.is-deleting {
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: -10px;
+            pointer-events: none;
+          }
+
+          .swipe-delete-action {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 22px;
+            background: transparent;
+            border-radius: 16px;
+            z-index: 1;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+          }
+
+          .swipe-delete-action.ready-delete {
+            background: transparent;
+          }
+
+          .swipe-delete-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: transform 0.18s cubic-bezier(0.18, 1, 0.22, 1);
+          }
+
+          .swipe-delete-label {
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+          }
+
+          .swipe-delete-action.ready-delete .swipe-delete-label {
+            color: #9ca3af;
+          }
+
+          :global(.swipe-trash-icon) {
+            color: #9ca3af !important;
+            stroke: #9ca3af !important;
+            transition: transform 0.18s cubic-bezier(0.18, 1, 0.22, 1);
+          }
+
+          :global(.swipe-trash-icon.ready) {
+            transform: scale(1.24);
+            color: #9ca3af !important;
+            stroke: #9ca3af !important;
+          }
+
           .exercise-config-card {
-            background: rgba(255, 255, 255, 0.04);
+            background: #141419;
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 16px;
             padding: 12px 14px;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            position: relative;
+            z-index: 2;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: border-color 0.16s ease, box-shadow 0.16s ease;
+          }
+
+          .exercise-cards-list.is-dragging-active {
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: grabbing !important;
+          }
+
+          .exercise-cards-list.is-dragging-active * {
+            cursor: grabbing !important;
+          }
+
+          .swipe-card-wrapper.wrapper-dragging {
+            overflow: visible !important;
+            z-index: 100 !important;
+            pointer-events: none;
+          }
+
+          .exercise-config-card.is-dragging {
+            background: #181822 !important;
+            border-color: rgba(96, 165, 250, 0.9) !important;
+            box-shadow: 0 18px 40px -6px rgba(0, 0, 0, 0.92),
+                        0 0 0 1.5px rgba(96, 165, 250, 0.75),
+                        0 0 28px rgba(59, 130, 246, 0.35) !important;
+            transform: scale(1.025) !important;
+            opacity: 0.97 !important;
+            cursor: grabbing !important;
+            animation: dragCardPulse 1.6s ease-in-out infinite alternate;
+          }
+
+          .exercise-config-card.is-dragging.is-dropping {
+            background: #141419 !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+            transform: scale(1) !important;
+            opacity: 1 !important;
+            animation: none !important;
+            transition: transform 0.24s cubic-bezier(0.18, 1, 0.22, 1),
+                        box-shadow 0.24s cubic-bezier(0.18, 1, 0.22, 1),
+                        border-color 0.24s ease,
+                        background 0.24s ease !important;
+          }
+
+          @keyframes dragCardPulse {
+            0% {
+              box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.85),
+                          0 0 0 1.5px rgba(96, 165, 250, 0.6),
+                          0 0 20px rgba(59, 130, 246, 0.25);
+            }
+            100% {
+              box-shadow: 0 22px 46px -6px rgba(0, 0, 0, 0.95),
+                          0 0 0 2px rgba(96, 165, 250, 0.9),
+                          0 0 34px rgba(59, 130, 246, 0.45);
+            }
+          }
+
+          .drag-handle.is-active {
+            color: #60a5fa !important;
+            transform: scale(1.2) !important;
           }
 
           .card-top-row {
             display: flex;
             align-items: center;
             gap: 10px;
-          }
-
-          .sequence-badge {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            color: #9ca3af;
-            font-size: 11px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
           }
 
           .thumb-container {
@@ -1030,50 +1456,33 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .card-actions {
             display: flex;
             align-items: center;
-            gap: 6px;
           }
 
-          .reorder-btns {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-          }
-
-          .btn-order {
-            width: 22px;
-            height: 15px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 4px;
-            color: #9ca3af;
+          .drag-handle {
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            padding: 0;
-          }
-
-          .btn-order:disabled {
-            opacity: 0.25;
-            cursor: not-allowed;
-          }
-
-          .btn-trash {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            color: #f87171;
             width: 32px;
             height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.15s ease;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: color 0.15s ease, transform 0.15s ease;
           }
 
-          .btn-trash:hover {
-            background: rgba(239, 68, 68, 0.25);
+          .drag-handle:hover {
+            color: #ffffff;
+            transform: scale(1.08);
+          }
+
+          .drag-handle:active {
+            cursor: grabbing;
+            color: #60a5fa;
+            transform: scale(0.95);
           }
 
           .steppers-grid {
@@ -1150,102 +1559,34 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             flex-shrink: 0;
           }
 
-          .delete-area {
-            display: flex;
-            justify-content: center;
-          }
-
-          .btn-delete-workout {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: transparent;
-            border: none;
-            color: #e05d5d;
-            font-size: 12.5px;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 8px;
-            transition: background 0.15s ease, color 0.15s ease;
-          }
-
-          .btn-delete-workout:hover {
-            background: rgba(239, 68, 68, 0.08);
-            color: #f87171;
-          }
-
-          .confirm-delete-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .confirm-text {
-            font-size: 12px;
-            color: #f87171;
-            font-weight: 600;
-          }
-
-          .btn-confirm-delete {
-            padding: 4px 10px;
-            background: #dc2626;
-            color: #ffffff;
-            border: none;
-            border-radius: 6px;
-            font-size: 11.5px;
-            font-weight: 700;
-            cursor: pointer;
-          }
-
-          .btn-cancel-delete {
-            padding: 4px 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #d1d5db;
-            border: none;
-            border-radius: 6px;
-            font-size: 11.5px;
-            cursor: pointer;
-          }
-
-          .main-actions-row {
-            display: flex;
-            gap: 10px;
-          }
-
-          .btn-secondary {
-            flex: 1;
-            padding: 13px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            color: #d1d5db;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-          }
-
           .btn-save-template {
-            flex: 2;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 13px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 16px 24px;
+            background: #ffffff;
             border: none;
-            border-radius: 14px;
-            color: #ffffff;
-            font-size: 14px;
+            border-radius: 9999px;
+            color: #09090b;
+            font-family: var(--font-display);
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-            transition: all 0.2s ease;
+            box-shadow: none;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
           }
 
           .btn-save-template:hover {
-            opacity: 0.95;
+            background: #f4f4f5;
             transform: translateY(-1px);
+            box-shadow: none;
+          }
+
+          .btn-save-template:active {
+            transform: scale(0.98);
+            background: #e4e4e7;
           }
 
           /* Exercise Picker Overlay */
