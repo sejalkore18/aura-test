@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   X,
   Plus,
+  Minus,
   Trash2,
   GripVertical,
   Dumbbell,
@@ -789,7 +790,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                                   handleUpdateExercise(idx, 'targetSets', item.targetSets - 1)
                                 }
                               >
-                                -
+                                <Minus size={13} strokeWidth={2.4} />
                               </button>
                               <span className="step-val">{item.targetSets}</span>
                               <button
@@ -799,7 +800,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                                   handleUpdateExercise(idx, 'targetSets', item.targetSets + 1)
                                 }
                               >
-                                +
+                                <Plus size={13} strokeWidth={2.4} />
                               </button>
                             </div>
                           </div>
@@ -815,7 +816,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                                   handleUpdateExercise(idx, 'targetReps', item.targetReps - 1)
                                 }
                               >
-                                -
+                                <Minus size={13} strokeWidth={2.4} />
                               </button>
                               <span className="step-val">{item.targetReps}</span>
                               <button
@@ -825,7 +826,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                                   handleUpdateExercise(idx, 'targetReps', item.targetReps + 1)
                                 }
                               >
-                                +
+                                <Plus size={13} strokeWidth={2.4} />
                               </button>
                             </div>
                           </div>
@@ -845,7 +846,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                                   )
                                 }
                               >
-                                -
+                                <Minus size={13} strokeWidth={2.4} />
                               </button>
                               <span className="step-val weight-val">
                                 {item.targetWeightKg > 0 ? `${item.targetWeightKg}kg` : 'BW'}
@@ -861,7 +862,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                                   )
                                 }
                               >
-                                +
+                                <Plus size={13} strokeWidth={2.4} />
                               </button>
                             </div>
                           </div>
@@ -1350,7 +1351,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             padding: 14px 14px;
             display: flex;
             flex-direction: column;
-            gap: 11px;
+            gap: 14px;
             position: relative;
             z-index: 2;
             touch-action: pan-y;
@@ -1499,8 +1500,8 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             display: grid;
             grid-template-columns: 1fr 1fr 1.3fr;
             gap: 8px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
           }
 
           .stepper-item {
@@ -1528,24 +1529,27 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .step-btn {
-            width: 23px;
-            height: 23px;
-            background: rgba(255, 255, 255, 0.08);
+            width: 24px;
+            height: 24px;
+            background: transparent;
             border: none;
             border-radius: 6px;
-            color: #d1d5db;
-            font-size: 14px;
-            font-weight: 700;
+            color: #9ca3af;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.15s ease;
+            transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
           }
 
           .step-btn:hover {
-            background: rgba(255, 255, 255, 0.16);
             color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+          }
+
+          .step-btn:active {
+            transform: scale(0.88);
+            color: #60a5fa;
           }
 
           .step-val {
