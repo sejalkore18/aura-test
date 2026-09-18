@@ -1555,7 +1555,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .weight-val {
-            color: #38bdf8;
+            color: #60a5fa;
             font-size: 12px;
           }
 
