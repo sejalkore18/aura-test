@@ -212,7 +212,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       cardWrappers[0]?.offsetTop !== undefined &&
       cardWrappers[1].offsetTop > cardWrappers[0].offsetTop
         ? cardWrappers[1].offsetTop - cardWrappers[0].offsetTop
-        : (currentCardRect?.height || 110) + 10;
+        : (currentCardRect?.height || 110) + 14;
     setDragItemHeight(measuredSlotHeight);
 
     const startClientY = e.clientY;
@@ -550,7 +550,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           {/* Template Title Input */}
           <div className="input-group">
             <label className="input-label" htmlFor="workout-title-input">
-              Workout Name *
+              Workout Name
             </label>
             <input
               id="workout-title-input"
@@ -1079,7 +1079,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .input-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 10px;
           }
 
           .input-label {
@@ -1183,7 +1183,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
           .section-header-row {
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
             align-items: center;
           }
 
@@ -1262,7 +1262,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .exercise-cards-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 14px;
           }
 
           .swipe-card-wrapper {
@@ -1280,7 +1280,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .swipe-card-wrapper.is-deleting {
             max-height: 0;
             opacity: 0;
-            margin-bottom: -10px;
+            margin-bottom: -14px;
             pointer-events: none;
           }
 
@@ -1443,6 +1443,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             flex: 1;
             display: flex;
             flex-direction: column;
+            gap: 4px;
             min-width: 0;
           }
 
