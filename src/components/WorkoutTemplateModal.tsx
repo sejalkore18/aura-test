@@ -206,7 +206,13 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     });
 
     const currentCardRect = cardWrappers[index]?.getBoundingClientRect();
-    const measuredSlotHeight = (currentCardRect?.height || 110) + 10;
+    const measuredSlotHeight =
+      cardWrappers.length >= 2 &&
+      cardWrappers[1]?.offsetTop !== undefined &&
+      cardWrappers[0]?.offsetTop !== undefined &&
+      cardWrappers[1].offsetTop > cardWrappers[0].offsetTop
+        ? cardWrappers[1].offsetTop - cardWrappers[0].offsetTop
+        : (currentCardRect?.height || 110) + 10;
     setDragItemHeight(measuredSlotHeight);
 
     const startClientY = e.clientY;
@@ -384,12 +390,12 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     setIsSwipingActive(false);
 
     if (locked === 'h' && swipingIndex === startIndex) {
-      // Only delete if shifted more than 70% of tile width to the left
-      const deleteThreshold = cardWidth * 0.7;
+      // Only delete if shifted more than 60% of tile width to the left
+      const deleteThreshold = cardWidth * 0.6;
       if (Math.abs(swipeOffset) >= deleteThreshold) {
         handleTriggerDelete(startIndex);
       } else {
-        // Shifted less than 70% -> smoothly snap back to 0
+        // Shifted less than 60% -> smoothly snap back to 0
         setSwipeOffset(0);
         setSwipingIndex(null);
       }
@@ -581,22 +587,6 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             )}
           </div>
 
-          {/* Stats Preview */}
-          <div className="stats-preview-bar">
-            <div className="stat-item">
-              <Layers size={14} className="text-accent" />
-              <span>{exercises.length} Movements</span>
-            </div>
-            <div className="stat-item">
-              <Flame size={14} className="text-orange" />
-              <span>{totalSets} Sets</span>
-            </div>
-            <div className="stat-item">
-              <Clock size={14} className="text-blue" />
-              <span>~{estimatedMinutes} min</span>
-            </div>
-          </div>
-
           {/* Exercises Sequence Section */}
           <div className="exercises-section">
             <div className="section-header-row">
@@ -608,6 +598,22 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                 <Plus size={15} />
                 <span>Add Exercise</span>
               </button>
+            </div>
+
+            {/* Stats Preview */}
+            <div className="stats-preview-bar">
+              <div className="stat-item">
+                <Layers size={14} className="text-accent" />
+                <span>{exercises.length} Movements</span>
+              </div>
+              <div className="stat-item">
+                <Flame size={14} className="text-orange" />
+                <span>{totalSets} Sets</span>
+              </div>
+              <div className="stat-item">
+                <Clock size={14} className="text-blue" />
+                <span>~{estimatedMinutes} min</span>
+              </div>
             </div>
 
             {exercises.length === 0 ? (
@@ -652,8 +658,8 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
                   const isSwipeActive =
                     (swipingIndex === idx && swipeOffset < 0) || deletingIndex === idx;
-                  const deleteThreshold = swipingCardWidth > 0 ? swipingCardWidth * 0.7 : 240;
-                  const isPast70Percent =
+                  const deleteThreshold = swipingCardWidth > 0 ? swipingCardWidth * 0.6 : 200;
+                  const isPast60Percent =
                     swipingIndex === idx && Math.abs(swipeOffset) >= deleteThreshold;
 
                   return (
@@ -676,14 +682,16 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                             : 'none'
                           : isDraggingActive
                           ? 'transform 0.28s cubic-bezier(0.2, 0, 0, 1)'
-                          : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.25s ease, opacity 0.2s ease',
+                          : deletingIndex === idx
+                          ? 'max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+                          : 'none',
                       }}
                     >
                       {/* Swipe Delete Background Action (rendered only when actively swiping or deleting) */}
                       {isSwipeActive && (
                         <div
                           className={`swipe-delete-action ${
-                            isPast70Percent ? 'ready-delete' : ''
+                            isPast60Percent ? 'ready-delete' : ''
                           }`}
                           onClick={() => handleTriggerDelete(idx)}
                         >
@@ -691,10 +699,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                             <Trash2
                               size={20}
                               color="#9ca3af"
-                              className={`swipe-trash-icon ${isPast70Percent ? 'ready' : ''}`}
+                              className={`swipe-trash-icon ${isPast60Percent ? 'ready' : ''}`}
                             />
                             <span className="swipe-delete-label">
-                              {isPast70Percent ? 'Release to Delete' : 'Slide to Delete'}
+                              {isPast60Percent ? 'Release to Delete' : 'Slide to Delete'}
                             </span>
                           </div>
                         </div>
@@ -1141,8 +1149,9 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             display: flex;
             align-items: center;
             justify-content: space-around;
-            padding: 6px 4px;
-            margin-bottom: 14px;
+            padding: 4px 4px 0;
+            margin-top: 12px;
+            margin-bottom: 4px;
             background: transparent;
             border: none;
           }
@@ -1338,10 +1347,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             background: #141419;
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 16px;
-            padding: 12px 14px;
+            padding: 14px 14px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 11px;
             position: relative;
             z-index: 2;
             touch-action: pan-y;
@@ -1489,14 +1498,14 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             display: grid;
             grid-template-columns: 1fr 1fr 1.3fr;
             gap: 8px;
-            padding-top: 8px;
+            padding-top: 10px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
           }
 
           .stepper-item {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 7px;
           }
 
           .stepper-label {
@@ -1514,12 +1523,12 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
-            padding: 3px 6px;
+            padding: 4px 6px;
           }
 
           .step-btn {
-            width: 22px;
-            height: 22px;
+            width: 23px;
+            height: 23px;
             background: rgba(255, 255, 255, 0.08);
             border: none;
             border-radius: 6px;
