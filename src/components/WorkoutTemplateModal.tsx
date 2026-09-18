@@ -470,7 +470,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       return;
     }
     if (exercises.length === 0) {
-      setErrorMessage('Please add at least one exercise to this workout template.');
+      setErrorMessage('Please add at least one exercise to this workout.');
       return;
     }
 
@@ -521,7 +521,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     <div
       className="template-page-view"
       role="region"
-      aria-label={mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
+      aria-label={mode === 'create' ? 'Create Workout' : 'Modify Workout'}
     >
       {/* Page Header */}
       <header className="page-header">
@@ -535,7 +535,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           <ArrowLeft size={18} />
         </button>
         <h1 className="page-title">
-          {mode === 'create' ? 'Create Custom Workout' : 'Modify Workout'}
+          {mode === 'create' ? 'Create Workout' : 'Modify Workout'}
         </h1>
       </header>
 
@@ -556,7 +556,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             <input
               id="workout-title-input"
               type="text"
-              placeholder='e.g. "Upper Body", "Leg Day", "Push A"'
+              placeholder='e.g. "Upper Body", "Leg Day"'
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
@@ -619,13 +619,11 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
             {exercises.length === 0 ? (
               <div className="empty-exercises-card" onClick={() => setShowExercisePicker(true)}>
-                <Dumbbell size={32} className="empty-icon" />
+                <div className="empty-icon-wrap">
+                  <Dumbbell size={32} />
+                </div>
                 <h4>No exercises added yet</h4>
                 <p>Tap here to add exercises with custom sets, reps, and weights.</p>
-                <button type="button" className="btn-add-initial">
-                  <Plus size={16} />
-                  <span>Choose First Exercise</span>
-                </button>
               </div>
             ) : (
               <div
@@ -883,7 +881,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             className="btn-save-template"
             onClick={handleSave}
           >
-            <span>{mode === 'create' ? 'Create Template' : 'Save'}</span>
+            <span>{mode === 'create' ? 'Create Workout' : 'Save'}</span>
           </button>
         </footer>
 
@@ -1066,7 +1064,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
           .error-banner {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
             padding: 10px 14px;
             background: rgba(239, 68, 68, 0.16);
@@ -1075,6 +1073,12 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             color: #f87171;
             font-size: 13px;
             font-weight: 500;
+            line-height: 1.4;
+          }
+
+          :global(.error-banner svg) {
+            flex-shrink: 0;
+            margin-top: 2px;
           }
 
           .input-group {
@@ -1112,8 +1116,9 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .presets-row {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-top: 4px;
+            gap: 7px;
+            margin-top: 12px;
+            margin-bottom: 6px;
           }
 
           .presets-label {
@@ -1213,7 +1218,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 30px 20px;
+            padding: 34px 20px;
             background: rgba(255, 255, 255, 0.02);
             border: 1px dashed rgba(255, 255, 255, 0.12);
             border-radius: 18px;
@@ -1227,37 +1232,27 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             border-color: rgba(59, 130, 246, 0.3);
           }
 
-          .empty-icon {
-            color: #4b5563;
-            margin-bottom: 8px;
+          .empty-icon-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d1d5db;
+            margin-bottom: 14px;
           }
 
           .empty-exercises-card h4 {
             font-size: 14px;
             font-weight: 700;
             color: #d1d5db;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
           }
 
           .empty-exercises-card p {
             font-size: 12px;
             color: #6b7280;
+            line-height: 1.5;
             max-width: 260px;
-            margin-bottom: 12px;
-          }
-
-          .btn-add-initial {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background: #2563eb;
-            color: #ffffff;
-            border: none;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
+            margin-bottom: 0;
           }
 
           .exercise-cards-list {
