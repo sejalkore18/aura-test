@@ -344,7 +344,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
           {/* Scrollable Body */}
           <div className="summary-content-body">
-            {/* Hero Cover Banner */}
+            {/* Hero Cover Banner with Integrated Frosted Stat Bar */}
             <div className="summary-hero-banner">
               <Image
                 src={getRoutineCoverImage(selectedRoutineForSummary)}
@@ -358,58 +358,57 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
               <div className="summary-hero-content">
                 <h2 className="summary-hero-title">{selectedRoutineForSummary.title}</h2>
               </div>
-            </div>
 
-            {/* Highlights Stats Grid */}
-            <div className="summary-stats-grid">
-              <div className="summary-stat-card">
-                <div className="stat-card-icon-wrap duration">
-                  <Clock size={16} />
+              {/* Integrated Frosted Glass Stat Bar */}
+              <div className="hero-stat-bar">
+                <div className="hero-stat-col">
+                  <div className="hero-stat-top">
+                    <Clock size={13} className="hero-stat-icon icon-cyan" />
+                    <span className="hero-stat-value">~{selectedRoutineForSummary.estimatedMinutes || 25}</span>
+                    <span className="hero-stat-unit">min</span>
+                  </div>
+                  <span className="hero-stat-label">Time</span>
                 </div>
-                <div className="stat-card-details">
-                  <span className="stat-card-value">~{selectedRoutineForSummary.estimatedMinutes || 25} min</span>
-                  <span className="stat-card-label">Estimated Time</span>
-                </div>
-              </div>
 
-              <div className="summary-stat-card">
-                <div className="stat-card-icon-wrap burn">
-                  <Flame size={16} />
-                </div>
-                <div className="stat-card-details">
-                  <span className="stat-card-value">
-                    {selectedRoutineForSummary.estimatedCalories ??
-                      Math.round((selectedRoutineForSummary.estimatedMinutes || 25) * 4)}{' '}
-                    cal
-                  </span>
-                  <span className="stat-card-label">Est. Calories</span>
-                </div>
-              </div>
+                <div className="hero-stat-divider" />
 
-              <div className="summary-stat-card">
-                <div className="stat-card-icon-wrap moves">
-                  <Dumbbell size={16} />
+                <div className="hero-stat-col">
+                  <div className="hero-stat-top">
+                    <Flame size={13} className="hero-stat-icon icon-orange" />
+                    <span className="hero-stat-value">
+                      {selectedRoutineForSummary.estimatedCalories ??
+                        Math.round((selectedRoutineForSummary.estimatedMinutes || 25) * 4)}
+                    </span>
+                    <span className="hero-stat-unit">cal</span>
+                  </div>
+                  <span className="hero-stat-label">Calories</span>
                 </div>
-                <div className="stat-card-details">
-                  <span className="stat-card-value">
-                    {selectedRoutineForSummary.exercises?.length || 0}
-                  </span>
-                  <span className="stat-card-label">Movements</span>
-                </div>
-              </div>
 
-              <div className="summary-stat-card">
-                <div className="stat-card-icon-wrap sets">
-                  <Layers size={16} />
+                <div className="hero-stat-divider" />
+
+                <div className="hero-stat-col">
+                  <div className="hero-stat-top">
+                    <Dumbbell size={13} className="hero-stat-icon icon-purple" />
+                    <span className="hero-stat-value">
+                      {selectedRoutineForSummary.exercises?.length || 0}
+                    </span>
+                  </div>
+                  <span className="hero-stat-label">Movements</span>
                 </div>
-                <div className="stat-card-details">
-                  <span className="stat-card-value">
-                    {selectedRoutineForSummary.exercises?.reduce(
-                      (acc, item) => acc + (item.targetSets || 0),
-                      0
-                    ) || 0}
-                  </span>
-                  <span className="stat-card-label">Total Sets</span>
+
+                <div className="hero-stat-divider" />
+
+                <div className="hero-stat-col">
+                  <div className="hero-stat-top">
+                    <Layers size={13} className="hero-stat-icon icon-emerald" />
+                    <span className="hero-stat-value">
+                      {selectedRoutineForSummary.exercises?.reduce(
+                        (acc, item) => acc + (item.targetSets || 0),
+                        0
+                      ) || 0}
+                    </span>
+                  </div>
+                  <span className="hero-stat-label">Total Sets</span>
                 </div>
               </div>
             </div>
@@ -1199,16 +1198,15 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           height: 0;
         }
 
-        /* Summary Hero Banner */
+        /* Summary Hero Banner with Integrated Stat Bar */
         .summary-hero-banner {
           position: relative;
           width: 100%;
-          height: 180px;
+          min-height: 250px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
           justify-content: flex-end;
-          padding: 16px 20px 2px;
           background: #000000;
         }
 
@@ -1222,8 +1220,9 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           inset: 0;
           background: linear-gradient(
             180deg,
-            rgba(8, 8, 10, 0.2) 0%,
-            rgba(8, 8, 10, 0.5) 45%,
+            rgba(8, 8, 10, 0.12) 0%,
+            rgba(8, 8, 10, 0.42) 42%,
+            rgba(8, 8, 10, 0.88) 80%,
             #08080a 100%
           );
           z-index: 1;
@@ -1235,97 +1234,106 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           flex-direction: column;
           gap: 4px;
+          padding: 24px 20px 14px 20px;
         }
 
         .summary-hero-title {
           font-family: var(--font-display);
-          font-size: 1.6rem;
+          font-size: 1.65rem;
           font-weight: 800;
           color: #ffffff;
           letter-spacing: -0.02em;
           margin: 0;
-          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+          line-height: 1.15;
         }
 
-        /* Summary Stats Grid */
-        .summary-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          padding: 20px 20px 0 20px;
-        }
-
-        .summary-stat-card {
+        /* Hero-Integrated Frosted Glass Stat Bar */
+        .hero-stat-bar {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          background: rgba(14, 14, 20, 0.72);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px 14px;
-          background: rgba(255, 255, 255, 0.035);
-          border: 1px solid rgba(255, 255, 255, 0.07);
-          border-radius: 16px;
+          justify-content: space-between;
+          padding: 11px 12px;
         }
 
-        .stat-card-icon-wrap {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .stat-card-icon-wrap.duration {
-          background: rgba(59, 130, 246, 0.12);
-          color: #60a5fa;
-          border: 1px solid rgba(59, 130, 246, 0.25);
-        }
-
-        .stat-card-icon-wrap.burn {
-          background: rgba(249, 115, 22, 0.12);
-          color: #fb923c;
-          border: 1px solid rgba(249, 115, 22, 0.25);
-        }
-
-        .stat-card-icon-wrap.moves {
-          background: rgba(168, 85, 247, 0.12);
-          color: #c084fc;
-          border: 1px solid rgba(168, 85, 247, 0.25);
-        }
-
-        .stat-card-icon-wrap.sets {
-          background: rgba(16, 185, 129, 0.12);
-          color: #34d399;
-          border: 1px solid rgba(16, 185, 129, 0.25);
-        }
-
-        .stat-card-details {
+        .hero-stat-col {
+          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
           min-width: 0;
         }
 
-        .stat-card-value {
-          font-size: 14px;
-          font-weight: 700;
-          color: #ffffff;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+        .hero-stat-top {
+          display: flex;
+          align-items: center;
+          gap: 5px;
         }
 
-        .stat-card-label {
-          font-size: 10.5px;
+        .hero-stat-icon {
+          flex-shrink: 0;
+        }
+
+        .hero-stat-icon.icon-cyan {
+          color: #38bdf8;
+        }
+
+        .hero-stat-icon.icon-orange {
+          color: #fb923c;
+        }
+
+        .hero-stat-icon.icon-purple {
+          color: #c084fc;
+        }
+
+        .hero-stat-icon.icon-emerald {
+          color: #34d399;
+        }
+
+        .hero-stat-value {
+          font-family: var(--font-display);
+          font-size: 14.5px;
+          font-weight: 700;
+          color: #ffffff;
+          letter-spacing: -0.01em;
+          line-height: 1;
+        }
+
+        .hero-stat-unit {
+          font-size: 11px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.55);
+          line-height: 1;
+        }
+
+        .hero-stat-label {
+          font-size: 9.5px;
           font-weight: 600;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.45);
+          letter-spacing: 0.05em;
           text-transform: uppercase;
-          letter-spacing: 0.04em;
+        }
+
+        .hero-stat-divider {
+          width: 1px;
+          height: 24px;
+          background: rgba(255, 255, 255, 0.08);
+          flex-shrink: 0;
         }
 
         /* Exercises Section */
         .summary-section-header {
-          padding: 24px 20px 10px;
+          padding: 32px 20px 12px;
           display: flex;
           align-items: center;
           justify-content: space-between;
