@@ -70,9 +70,31 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
     allRoutines.find((r) => r.id === selectedSummaryRoutineId) || null;
 
   useEffect(() => {
-    const container = document.querySelector('.app-container') || document.body;
-    setPortalTarget(container);
+    const updatePortalTarget = () => {
+      const isMobile = window.innerWidth <= 640;
+      const container = isMobile ? document.body : (document.querySelector('.app-container') || document.body);
+      setPortalTarget(container);
+    };
+
+    updatePortalTarget();
+    window.addEventListener('resize', updatePortalTarget);
+    return () => window.removeEventListener('resize', updatePortalTarget);
   }, []);
+
+  // Lock background window and body scrolling while full-screen summary view is open
+  useEffect(() => {
+    if (selectedRoutineForSummary) {
+      window.scrollTo(0, 0);
+      const originalOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+      };
+    }
+  }, [selectedRoutineForSummary]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1092,6 +1114,21 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           animation: pageSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        @media (max-width: 640px) {
+          .workout-summary-screen-view {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            z-index: 9999 !important;
+            overscroll-behavior: none !important;
+          }
+        }
+
         @keyframes pageSlideIn {
           from {
             opacity: 0;
@@ -1185,9 +1222,11 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
         .summary-content-body {
           flex: 1;
+          min-height: 0;
           overflow-y: auto;
           overscroll-behavior: contain;
-          padding-bottom: 96px;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: 24px;
           scrollbar-width: none;
           -ms-overflow-style: none;
         }
@@ -1261,7 +1300,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 11px 12px;
+          padding: 13px 12px;
         }
 
         .hero-stat-col {
@@ -1270,7 +1309,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 3px;
+          gap: 6px;
           min-width: 0;
         }
 
@@ -1322,11 +1361,12 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           color: rgba(255, 255, 255, 0.45);
           letter-spacing: 0.05em;
           text-transform: uppercase;
+          line-height: 1;
         }
 
         .hero-stat-divider {
           width: 1px;
-          height: 24px;
+          height: 26px;
           background: rgba(255, 255, 255, 0.08);
           flex-shrink: 0;
         }
@@ -1526,10 +1566,9 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
         /* Sticky Bottom Footer */
         .summary-footer {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
+          position: relative;
+          flex-shrink: 0;
+          width: 100%;
           z-index: 80;
           padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
           border-top: 1px solid rgba(255, 255, 255, 0.08);
