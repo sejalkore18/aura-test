@@ -338,15 +338,15 @@ export default function HomePage() {
     };
     setExerciseProgress(newProgress);
 
-    const isLastSetOfExercise = setIndex === updatedSets.length - 1;
+    const allSetsCompleted = updatedSets.every((s) => s.completed);
     const isLastExerciseOfRoutine = currentExerciseIndex === currentRoutine.exercises.length - 1;
 
-    if (isLastSetOfExercise && isLastExerciseOfRoutine) {
+    if (allSetsCompleted && isLastExerciseOfRoutine) {
       // First put a check on the last set, then finish workout
       setTimeout(() => {
         finishWorkout(newProgress);
       }, 600);
-    } else if (isLastSetOfExercise) {
+    } else if (allSetsCompleted) {
       // First put a check on the last set, then move to next exercise
       setTimeout(() => {
         const nextExIndex = currentExerciseIndex + 1;
@@ -354,9 +354,46 @@ export default function HomePage() {
         setCurrentSetIndex(0);
       }, 600);
     } else {
-      // Advance directly to next set in current exercise without rest screen
-      const nextSetIdx = setIndex + 1;
-      setCurrentSetIndex(nextSetIdx);
+      // Advance to next incomplete set in current exercise
+      const nextIncompleteIdx = updatedSets.findIndex((s, i) => i > setIndex && !s.completed);
+      const fallbackIncompleteIdx = updatedSets.findIndex((s) => !s.completed);
+      const nextIdx =
+        nextIncompleteIdx !== -1
+          ? nextIncompleteIdx
+          : fallbackIncompleteIdx !== -1
+          ? fallbackIncompleteIdx
+          : Math.min(setIndex + 1, updatedSets.length - 1);
+      setCurrentSetIndex(nextIdx);
+    }
+  };
+
+  // Toggle set completion (unmark if completed)
+  const handleToggleSet = (setIndex: number) => {
+    const currentEx = currentRoutine.exercises[currentExerciseIndex];
+    if (!currentEx) return;
+
+    const existingSets = getSetsForExercise(
+      currentEx.exerciseId,
+      currentEx.targetSets,
+      currentEx.targetReps,
+      currentEx.targetWeightKg
+    );
+
+    const targetSet = existingSets[setIndex];
+    if (!targetSet) return;
+
+    if (targetSet.completed) {
+      const updatedSets = [...existingSets];
+      updatedSets[setIndex] = {
+        ...updatedSets[setIndex],
+        completed: false,
+        completedAt: undefined,
+      };
+      setExerciseProgress({
+        ...exerciseProgress,
+        [currentEx.exerciseId]: updatedSets,
+      });
+      setCurrentSetIndex(setIndex);
     }
   };
 
@@ -734,6 +771,7 @@ export default function HomePage() {
             onAddSet={handleAddSet}
             onRemoveSet={handleRemoveSet}
             onCompleteSet={handleCompleteSet}
+            onToggleSet={handleToggleSet}
             onPreviousSet={handlePreviousSet}
             onSkipExercise={handleSkipExercise}
             onOpenExerciseDetails={() => setSelectedExerciseForGuide(activeExerciseData as Exercise)}

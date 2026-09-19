@@ -28,6 +28,7 @@ interface ActiveWorkoutPlayerProps {
   onAddSet?: () => void;
   onRemoveSet?: () => void;
   onCompleteSet: (setIndex: number, reps: number, weightKg: number) => void;
+  onToggleSet?: (setIndex: number) => void;
   onPreviousSet: () => void;
   onSkipExercise: () => void;
   onOpenExerciseDetails: () => void;
@@ -47,6 +48,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
   onAddSet,
   onRemoveSet,
   onCompleteSet,
+  onToggleSet,
   onPreviousSet,
   onSkipExercise,
   onOpenExerciseDetails,
@@ -120,6 +122,33 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
       setIsFinishing(true);
     }
     onCompleteSet(currentSetIndex, reps, weightKg);
+  };
+
+  // Tap a set pill to mark it as done (or toggle unmark if already done)
+  const handleSetClick = (idx: number) => {
+    if (isFinishing) return;
+    const targetSet = sets[idx];
+    if (!targetSet) return;
+
+    if (targetSet.completed) {
+      if (onToggleSet) {
+        onToggleSet(idx);
+      } else {
+        onSetChange(idx);
+      }
+    } else {
+      const setReps =
+        idx === currentSetIndex ? reps : (targetSet.actualReps || targetSet.targetReps);
+      const setWeight =
+        idx === currentSetIndex ? weightKg : (targetSet.weightKg ?? weightKg ?? 0);
+
+      const allOthersCompleted = sets.every((s, i) => i === idx || s.completed);
+      if (allOthersCompleted) {
+        setIsFinishing(true);
+      }
+
+      onCompleteSet(idx, setReps, setWeight);
+    }
   };
 
   // Toggle video play/pause
@@ -325,11 +354,17 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
               return (
                 <button
                   key={set.setNumber}
+                  type="button"
                   className={`set-pill ${
                     isCompleted ? 'completed' : isActive ? 'active' : 'upcoming'
                   }`}
-                  onClick={() => onSetChange(idx)}
-                  title={`Go to Set ${set.setNumber}`}
+                  onClick={() => handleSetClick(idx)}
+                  title={
+                    isCompleted
+                      ? `Set ${set.setNumber} completed (tap to unmark)`
+                      : `Tap to mark Set ${set.setNumber} done`
+                  }
+                  aria-label={`Set ${set.setNumber}${isCompleted ? ' completed' : ''}`}
                 >
                   {isCompleted ? (
                     <Check size={18} strokeWidth={3} className="check-mark" />
@@ -363,11 +398,17 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
                 return (
                   <button
                     key={set.setNumber}
+                    type="button"
                     className={`set-pill ${
                       isCompleted ? 'completed' : isActive ? 'active' : 'upcoming'
                     }`}
-                    onClick={() => onSetChange(idx)}
-                    title={`Go to Set ${set.setNumber}`}
+                    onClick={() => handleSetClick(idx)}
+                    title={
+                      isCompleted
+                        ? `Set ${set.setNumber} completed (tap to unmark)`
+                        : `Tap to mark Set ${set.setNumber} done`
+                    }
+                    aria-label={`Set ${set.setNumber}${isCompleted ? ' completed' : ''}`}
                   >
                     {isCompleted ? (
                       <Check size={18} strokeWidth={3} className="check-mark" />
@@ -596,12 +637,12 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           flex-direction: column;
           align-items: center;
           margin-top: auto;
-          margin-bottom: 42px;
+          margin-bottom: 40px;
         }
 
         /* Weight Badge */
         .weight-badge-container {
-          margin-bottom: 32px;
+          margin-bottom: 28px;
         }
 
         .weight-pill {
@@ -804,6 +845,11 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           cursor: pointer;
         }
 
+        .set-pill:active,
+        :global(.set-pill:active) {
+          transform: scale(0.94);
+        }
+
         /* Completed: White Pill with Checkmark (Matching Reference) */
         .set-pill.completed,
         :global(.set-pill.completed) {
@@ -814,6 +860,18 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
         :global(.check-mark) {
           color: #09090b;
+          animation: checkPop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes checkPop {
+          0% {
+            transform: scale(0.5);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
         }
 
         /* Active Set Pill: Dark Pill with subtle border (Matching Reference "Set 3") */
