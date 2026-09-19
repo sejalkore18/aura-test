@@ -23,7 +23,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#30d158', '#ffffff', '#0a84ff', '#ff9f0a'],
+        colors: ['#30d158', '#e4e4e7', '#0a84ff', '#ff9f0a'],
       });
       setTimeout(() => {
         confetti({
@@ -161,7 +161,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
         .summary-title {
           font-size: 1.6rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           margin-bottom: 4px;
         }
 
@@ -207,7 +207,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
           font-family: var(--font-display);
           font-size: 1.35rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .stat-lbl {
@@ -251,7 +251,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
         }
 
         .item-name {
-          color: #ffffff;
+          color: #e4e4e7;
           font-weight: 500;
         }
 

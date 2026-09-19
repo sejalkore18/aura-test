@@ -137,7 +137,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           gap: 20px;
           flex: 1;
           padding: 24px 20px;
-          color: #ffffff;
+          color: #e4e4e7;
           overflow-y: auto;
         }
 
@@ -162,14 +162,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           font-family: var(--font-display);
           font-size: 2rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           margin-bottom: 14px;
         }
 
         .user-display-name {
           font-size: 1.5rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .user-membership-badge {
@@ -220,7 +220,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         }
 
         .switch-user-btn.active {
-          background: #ffffff;
+          background: #c8c8cc;
           color: #09090b;
         }
 
@@ -275,7 +275,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.45rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .stat-label {
@@ -319,7 +319,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         }
 
         .setting-value {
-          color: #ffffff;
+          color: #e4e4e7;
           font-weight: 600;
         }
 

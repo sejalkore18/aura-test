@@ -343,7 +343,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           justify-content: space-between;
           flex: 1;
           min-height: 100%;
-          color: #ffffff;
+          color: #e4e4e7;
           overflow: hidden;
           padding: 16px 20px 24px;
         }
@@ -431,7 +431,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           border-radius: var(--radius-pill);
           font-size: 0.78rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .guide-pill-btn:hover {
@@ -445,7 +445,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ffffff;
+          color: #e4e4e7;
           background: rgba(0, 0, 0, 0.45);
           backdrop-filter: blur(12px);
           border: 1px solid rgba(255, 255, 255, 0.12);
@@ -527,7 +527,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           flex: 1;
           font-size: 0.9rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
           text-transform: capitalize;
         }
 
@@ -570,7 +570,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
         }
 
         .weight-pill.bodyweight:hover {
-          color: #ffffff;
+          color: #e4e4e7;
           border-color: rgba(255, 255, 255, 0.3);
         }
 
@@ -578,7 +578,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           width: 24px;
           height: 24px;
           border-radius: 50%;
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 1rem;
           display: flex;
           align-items: center;
@@ -597,7 +597,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           padding: 0 10px;
           font-size: 0.86rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         /* Counter Container */
@@ -615,7 +615,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.14);
           border: 1px solid rgba(255, 255, 255, 0.2);
-          color: #ffffff;
+          color: #e4e4e7;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -641,7 +641,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           font-weight: 800;
           line-height: 0.9;
           letter-spacing: -0.04em;
-          color: #ffffff;
+          color: #e4e4e7;
           text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
         }
 
@@ -679,7 +679,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
         /* Completed: White Pill with Checkmark (Matching Reference) */
         .set-pill.completed {
-          background: #ffffff;
+          background: #e4e4e7;
           color: #09090b;
           box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
         }
@@ -692,7 +692,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
         .set-pill.active {
           background: rgba(255, 255, 255, 0.35);
           backdrop-filter: blur(16px);
-          color: #ffffff;
+          color: #e4e4e7;
           border: 1px solid rgba(255, 255, 255, 0.35);
           box-shadow: 0 0 16px rgba(255, 255, 255, 0.15);
         }
@@ -707,7 +707,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
         .set-pill.upcoming:hover {
           background: rgba(255, 255, 255, 0.25);
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         /* Bottom Controls Bar */

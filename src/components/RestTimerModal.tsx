@@ -84,7 +84,7 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
             {/* Animated progress circle */}
             <circle
               className="progress-circle"
-              stroke="#ffffff"
+              stroke="#e4e4e7"
               strokeWidth="10"
               strokeLinecap="round"
               fill="transparent"
@@ -171,7 +171,7 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
         .next-up-title {
           font-size: 1.1rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         /* Circular SVG */
@@ -205,7 +205,7 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
           font-size: 3.4rem;
           font-weight: 800;
           letter-spacing: -0.02em;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .time-label {
@@ -234,7 +234,7 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: var(--radius-pill);
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 0.88rem;
           font-weight: 600;
         }

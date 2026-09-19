@@ -168,7 +168,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         .header-title {
           font-size: 1.15rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .user-badge {
@@ -180,7 +180,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           justify-content: center;
           font-size: 0.75rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .close-btn {
@@ -188,7 +188,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           height: 36px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
-          color: #ffffff;
+          color: #e4e4e7;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -218,7 +218,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           font-family: var(--font-display);
           font-size: 1.4rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .stat-caption {
@@ -258,7 +258,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         .empty-text {
           font-size: 1.05rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .empty-subtext {
@@ -293,7 +293,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         .log-title {
           font-size: 0.98rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .log-date {

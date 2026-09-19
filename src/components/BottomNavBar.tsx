@@ -130,11 +130,11 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         }
 
         .nav-tab-btn:hover {
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .nav-tab-btn.active {
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .icon-container {
@@ -154,7 +154,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           justify-content: center;
           font-size: 0.72rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           transition: transform 0.2s ease;
         }
 
@@ -170,7 +170,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         }
 
         .nav-tab-btn.active .tab-label {
-          color: #ffffff;
+          color: #e4e4e7;
         }
       `}</style>
     </nav>

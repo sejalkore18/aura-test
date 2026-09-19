@@ -125,7 +125,7 @@ export const AppBar: React.FC<AppBarProps> = ({
           font-family: var(--font-display);
           font-size: 1.08rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.015em;
           margin: 0;
           line-height: 1.2;
@@ -137,7 +137,7 @@ export const AppBar: React.FC<AppBarProps> = ({
           justify-content: center;
           width: 36px;
           height: 36px;
-          color: #ffffff;
+          color: #e4e4e7;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -186,7 +186,7 @@ export const AppBar: React.FC<AppBarProps> = ({
           font-size: 0.95rem;
           font-weight: 800;
           letter-spacing: 0.1em;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .center-slot {
@@ -202,7 +202,7 @@ export const AppBar: React.FC<AppBarProps> = ({
         .appbar-title {
           font-size: 0.92rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -249,12 +249,12 @@ export const AppBar: React.FC<AppBarProps> = ({
         }
 
         .profile-chip:hover {
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .profile-chip.active {
           background: rgba(255, 255, 255, 0.14);
-          color: #ffffff;
+          color: #e4e4e7;
           box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
         }
 
@@ -267,7 +267,7 @@ export const AppBar: React.FC<AppBarProps> = ({
           justify-content: center;
           font-size: 0.6rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .chip-name {

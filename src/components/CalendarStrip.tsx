@@ -199,7 +199,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         .nav-arrow-btn {
           background: transparent;
           border: none;
-          color: #ffffff;
+          color: #e4e4e7;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -224,7 +224,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           font-family: var(--font-display);
           font-size: 0.95rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.01em;
           white-space: nowrap;
           text-align: center;
@@ -259,15 +259,15 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         }
 
         .action-filter-pill:hover {
-          color: #ffffff;
+          color: #e4e4e7;
           background: rgba(30, 30, 38, 0.85);
           border-color: rgba(255, 255, 255, 0.18);
         }
 
         .action-filter-pill.active {
-          background: #ffffff;
+          background: #c8c8cc;
           color: #08080a;
-          border-color: #ffffff;
+          border-color: #e4e4e7;
           box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
         }
 
@@ -369,7 +369,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           font-family: var(--font-display);
           font-size: 1.02rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           line-height: 1;
         }
 
@@ -445,7 +445,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           width: 100%;
           aspect-ratio: 1;
           border-radius: 50%;
-          background: #ffffff;
+          background: #e4e4e7;
           color: #08080a;
           display: flex;
           flex-direction: column;
@@ -477,7 +477,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         .selected-day-name {
           font-size: 0.7rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.01em;
           margin-bottom: 1px;
           animation: dayLabelIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;

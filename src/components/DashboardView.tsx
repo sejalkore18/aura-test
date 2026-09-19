@@ -123,7 +123,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     strokeWidth = 5,
     strokeColor = '#2dd4bf',
     trackColor = 'rgba(255, 255, 255, 0.12)',
-    textColor = '#ffffff',
+    textColor = '#e4e4e7',
     progressStrokeWidth?: number
   ) => {
     const activeProgressStroke = progressStrokeWidth ?? strokeWidth;
@@ -247,7 +247,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 6,
                 '#34d399',
                 'rgba(255, 255, 255, 0.12)',
-                '#ffffff',
+                '#e4e4e7',
                 8
               )}
             </div>
@@ -286,16 +286,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {/* Barbell overhead */}
                   <path
                     d="M4 4H20M4 3V5M20 3V5"
-                    stroke="#ffffff"
+                    stroke="#e4e4e7"
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
                   {/* Lifter head */}
-                  <circle cx="12" cy="7.5" r="2" fill="#ffffff" />
+                  <circle cx="12" cy="7.5" r="2" fill="#e4e4e7" />
                   {/* Lifter arms holding barbell */}
                   <path
                     d="M6 5L9.5 9.5L12 11.5L14.5 9.5L18 5"
-                    stroke="#ffffff"
+                    stroke="#e4e4e7"
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -303,7 +303,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {/* Lifter torso & legs */}
                   <path
                     d="M12 11.5V16M12 16L9.5 20M12 16L14.5 20"
-                    stroke="#ffffff"
+                    stroke="#e4e4e7"
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -403,7 +403,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           gap: 22px;
           padding: 24px 20px 0;
           background-color: var(--bg-primary, #08080a);
-          color: var(--text-primary, #ffffff);
+          color: var(--text-primary, #e4e4e7);
           min-height: 100%;
           font-family: var(--font-body);
         }
@@ -568,7 +568,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.18rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.02em;
           margin: 0;
         }
@@ -622,7 +622,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.25rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           margin: 0;
           letter-spacing: -0.01em;
           line-height: 1.2;
@@ -730,7 +730,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.15rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           margin: 0;
           letter-spacing: -0.01em;
         }
@@ -794,7 +794,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.85rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.03em;
           line-height: 1.1;
         }
@@ -862,7 +862,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-family: var(--font-display);
           font-size: 0.95rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.01em;
         }
 
@@ -883,7 +883,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.05rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .formula-multiplier {
@@ -912,7 +912,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ffffff;
+          color: #e4e4e7;
           margin-bottom: 2px;
         }
 
@@ -946,7 +946,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           gap: 7px;
           padding: 9px 18px;
           border-radius: 9999px;
-          background: #ffffff;
+          background: #e4e4e7;
           color: #09090b;
           font-size: 0.82rem;
           font-weight: 700;

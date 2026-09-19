@@ -283,7 +283,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         .modal-title {
           font-size: 1.2rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .close-btn {
@@ -291,7 +291,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
           height: 36px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
-          color: #ffffff;
+          color: #e4e4e7;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -320,7 +320,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
           background: transparent;
           border: none;
           outline: none;
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 0.88rem;
           width: 100%;
           font-family: inherit;
@@ -348,7 +348,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         }
 
         .category-pill.active {
-          background: #ffffff;
+          background: #c8c8cc;
           color: #09090b;
           font-weight: 600;
         }
@@ -399,7 +399,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         .ex-name {
           font-size: 0.95rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .ex-meta {
@@ -408,7 +408,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         }
 
         .add-action-btn {
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 0.78rem;
           font-weight: 600;
           padding: 6px 10px;
@@ -443,7 +443,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         .config-name {
           font-size: 1.1rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .config-equipment {
@@ -470,7 +470,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         .control-label {
           font-size: 0.92rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .counter-row {
@@ -484,7 +484,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
           height: 36px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.12);
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 1.1rem;
           display: flex;
           align-items: center;
@@ -495,7 +495,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
           font-family: var(--font-display);
           font-size: 1.25rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           min-width: 48px;
           text-align: center;
         }

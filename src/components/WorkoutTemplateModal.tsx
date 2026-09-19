@@ -1087,7 +1087,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             justify-content: center;
             width: 36px;
             height: 36px;
-            color: #ffffff;
+            color: #e4e4e7;
             background: transparent;
             border: none;
             box-shadow: none;
@@ -1111,7 +1111,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             font-family: var(--font-display);
             font-size: 1.08rem;
             font-weight: 700;
-            color: #ffffff;
+            color: #e4e4e7;
             letter-spacing: -0.015em;
             margin: 0;
             line-height: 1.2;
@@ -1549,7 +1549,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .drag-handle:hover {
-            color: #ffffff;
+            color: #e4e4e7;
             transform: scale(1.08);
           }
 
@@ -1606,7 +1606,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .step-btn:hover {
-            color: #ffffff;
+            color: #e4e4e7;
             background: rgba(255, 255, 255, 0.08);
           }
 
@@ -1643,7 +1643,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             justify-content: center;
             gap: 8px;
             padding: 16px 24px;
-            background: #ffffff;
+            background: #e4e4e7;
             border: none;
             border-radius: 9999px;
             color: #09090b;
@@ -1656,14 +1656,14 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .btn-save-template:hover {
-            background: #f4f4f5;
+            background: #d4d4d8;
             transform: translateY(-1px);
             box-shadow: none;
           }
 
           .btn-save-template:active {
             transform: scale(0.98);
-            background: #e4e4e7;
+            background: #c8c8cc;
           }
 
           /* Exercise Picker Full Screen */
@@ -1893,20 +1893,20 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .btn-add-selected.active {
-            background: #ffffff;
+            background: #c8c8cc;
             color: #09090b;
             cursor: pointer;
             box-shadow: none;
           }
 
           .btn-add-selected.active:hover {
-            background: #f4f4f5;
+            background: #d4d4d8;
             transform: translateY(-1px);
           }
 
           .btn-add-selected.active:active {
             transform: scale(0.98);
-            background: #e4e4e7;
+            background: #c8c8cc;
           }
 
           .btn-add-selected.disabled {

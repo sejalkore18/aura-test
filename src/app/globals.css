@@ -6,13 +6,13 @@
   --bg-card: rgba(26, 26, 32, 0.7);
   --bg-card-hover: rgba(36, 36, 44, 0.85);
   --bg-pill: rgba(255, 255, 255, 0.08);
-  --bg-pill-active: #ffffff;
+  --bg-pill-active: #e4e4e7;
   
   --border-subtle: rgba(255, 255, 255, 0.09);
   --border-active: rgba(255, 255, 255, 0.25);
   --border-glow: rgba(255, 255, 255, 0.15);
 
-  --text-primary: #ffffff;
+  --text-primary: #e4e4e7;
   --text-secondary: #9a9aa2;
   --text-muted: #64646e;
   --text-dark: #09090b;
@@ -89,7 +89,7 @@ button:active {
 
 /* Primary Pill Button (Matching the Reference) */
 .btn-primary-pill {
-  background: #ffffff;
+  background: #e4e4e7;
   color: #09090b;
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -105,7 +105,7 @@ button:active {
   text-decoration: none;
 }
 .btn-primary-pill:hover {
-  background: #f4f4f5;
+  background: #d4d4d8;
   box-shadow: 0 8px 28px rgba(255, 255, 255, 0.28);
   transform: translateY(-1px);
 }
@@ -121,7 +121,7 @@ button:active {
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  color: #ffffff;
+  color: #e4e4e7;
   display: flex;
   align-items: center;
   justify-content: center;

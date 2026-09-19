@@ -238,7 +238,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           flex: 1;
           padding: 16px 20px 32px;
           background-color: var(--bg-primary, #08080a);
-          color: var(--text-primary, #ffffff);
+          color: var(--text-primary, #e4e4e7);
           min-height: 100%;
           font-family: var(--font-body);
           overflow-y: auto;
@@ -302,7 +302,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.38rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.02em;
           line-height: 1.1;
         }
@@ -390,7 +390,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.15rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           margin: 0;
           letter-spacing: -0.01em;
         }
@@ -417,7 +417,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255, 255, 255, 0.12);
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 0.8rem;
           font-weight: 600;
           cursor: pointer;
@@ -435,7 +435,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           gap: 6px;
           padding: 8px 18px;
           border-radius: 9999px;
-          background: #ffffff;
+          background: #e4e4e7;
           color: #09090b;
           font-size: 0.8rem;
           font-weight: 700;
@@ -470,7 +470,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         .empty-title {
           font-size: 1.15rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .empty-subtext {
@@ -541,7 +541,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           font-family: var(--font-display);
           font-size: 1.05rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           margin: 0;
           letter-spacing: -0.01em;
           line-height: 1.25;
@@ -564,7 +564,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           border-radius: 9999px;
           font-size: 0.76rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
           flex-shrink: 0;
         }
 

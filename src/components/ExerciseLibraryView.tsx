@@ -94,7 +94,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
                 unoptimized
               />
               <div className="play-overlay">
-                <Play size={16} fill="#ffffff" color="#ffffff" />
+                <Play size={16} fill="#e4e4e7" color="#e4e4e7" />
               </div>
             </div>
 
@@ -130,7 +130,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           flex-direction: column;
           flex: 1;
           padding: 22px 20px 24px;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .library-header {
@@ -140,7 +140,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
         .library-title {
           font-size: 1.65rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.02em;
         }
 
@@ -170,7 +170,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           background: transparent;
           border: none;
           outline: none;
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 0.88rem;
           font-family: inherit;
         }
@@ -204,7 +204,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
         }
 
         .category-pill.active {
-          background: #ffffff;
+          background: #c8c8cc;
           color: #09090b;
           font-weight: 600;
         }
@@ -294,7 +294,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
         .exercise-name {
           font-size: 1.02rem;
           font-weight: 600;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .muscle-preview {
@@ -319,7 +319,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
         }
 
         .info-action-btn:hover {
-          color: #ffffff;
+          color: #e4e4e7;
           background: rgba(255, 255, 255, 0.1);
         }
       `}</style>

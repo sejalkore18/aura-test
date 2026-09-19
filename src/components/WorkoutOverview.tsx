@@ -563,7 +563,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           flex-direction: column;
           flex: 1;
           padding: 18px 20px 28px;
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         /* Templates List */
@@ -692,7 +692,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         .template-title {
           font-size: 1.35rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.01em;
           text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
         }
@@ -834,7 +834,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         .ex-seq-name {
           font-size: 13px;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -925,7 +925,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
         .btn-card-action:hover {
           background: transparent;
-          color: #ffffff;
+          color: #e4e4e7;
           transform: scale(1.12);
         }
 
@@ -1016,7 +1016,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         .delete-modal-title {
           font-size: 17.5px;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           margin: 0 0 12px 0;
           letter-spacing: -0.01em;
         }
@@ -1030,7 +1030,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         }
 
         .delete-modal-target-title {
-          color: #ffffff;
+          color: #e4e4e7;
           font-weight: 700;
         }
 
@@ -1056,7 +1056,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
         .btn-delete-cancel:hover {
           background: rgba(255, 255, 255, 0.14);
-          color: #ffffff;
+          color: #e4e4e7;
         }
 
         .btn-delete-confirm {
@@ -1065,7 +1065,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           border-radius: 12px;
           background: #9f2424;
           border: 1px solid rgba(248, 113, 113, 0.28);
-          color: #ffffff;
+          color: #e4e4e7;
           font-size: 13.5px;
           font-weight: 600;
           cursor: pointer;
@@ -1174,7 +1174,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           font-family: var(--font-display);
           font-size: 1.08rem;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.015em;
           margin: 0;
           line-height: 1.2;
@@ -1186,7 +1186,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           justify-content: center;
           width: 36px;
           height: 36px;
-          color: #ffffff;
+          color: #e4e4e7;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1280,7 +1280,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           font-family: var(--font-display);
           font-size: 1.65rem;
           font-weight: 800;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.02em;
           margin: 0;
           text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
@@ -1343,7 +1343,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           font-family: var(--font-display);
           font-size: 14.5px;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           letter-spacing: -0.01em;
           line-height: 1;
         }
@@ -1503,7 +1503,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         .summary-exercise-name {
           font-size: 13.5px;
           font-weight: 700;
-          color: #ffffff;
+          color: #e4e4e7;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -1590,7 +1590,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           justify-content: center;
           gap: 8px;
           padding: 16px 24px;
-          background: #ffffff;
+          background: #e4e4e7;
           border: none;
           border-radius: 9999px;
           color: #09090b;
@@ -1603,14 +1603,14 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         }
 
         .btn-start-workout-action:hover {
-          background: #f4f4f5;
+          background: #d4d4d8;
           transform: translateY(-1px);
           box-shadow: none;
         }
 
         .btn-start-workout-action:active {
           transform: scale(0.98);
-          background: #e4e4e7;
+          background: #c8c8cc;
         }
       `}</style>
     </div>
