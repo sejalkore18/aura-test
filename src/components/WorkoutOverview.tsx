@@ -13,6 +13,10 @@ import {
   Sparkles,
   Dumbbell,
   CheckCircle2,
+  ArrowLeft,
+  Clock,
+  Flame,
+  Layers,
 } from 'lucide-react';
 import { WorkoutRoutine, RoutineExercise, Exercise } from '@/types/workout';
 import { getExerciseById, getRoutineCoverImage } from '@/data/exercises';
@@ -58,7 +62,12 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(null);
   // Track routine pending deletion for custom confirmation modal
   const [routineToDelete, setRoutineToDelete] = useState<WorkoutRoutine | null>(null);
+  // Track routine selected to preview in full-screen summary view
+  const [selectedSummaryRoutineId, setSelectedSummaryRoutineId] = useState<string | null>(null);
   const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+
+  const selectedRoutineForSummary =
+    allRoutines.find((r) => r.id === selectedSummaryRoutineId) || null;
 
   useEffect(() => {
     const container = document.querySelector('.app-container') || document.body;
@@ -67,13 +76,17 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && routineToDelete) {
-        setRoutineToDelete(null);
+      if (e.key === 'Escape') {
+        if (routineToDelete) {
+          setRoutineToDelete(null);
+        } else if (selectedSummaryRoutineId) {
+          setSelectedSummaryRoutineId(null);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [routineToDelete]);
+  }, [routineToDelete, selectedSummaryRoutineId]);
 
   const toggleExpand = (routineId: string) => {
     setExpandedRoutineId((prev) => (prev === routineId ? null : routineId));
@@ -117,16 +130,14 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                   key={r.id}
                   className="template-card"
                   onClick={() => {
-                    onSelectRoutine(r.id);
-                    onStartWorkout(r.id);
+                    setSelectedSummaryRoutineId(r.id);
                   }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      onSelectRoutine(r.id);
-                      onStartWorkout(r.id);
+                      setSelectedSummaryRoutineId(r.id);
                     }
                   }}
                 >
@@ -175,78 +186,17 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                     }}
                   >
                     {totalMovements > 0 ? (
-                      <>
-                        <div className="btn-toggle-movements">
-                          <span>{totalMovements} EXERCISE{totalMovements === 1 ? '' : 'S'}</span>
-                          {isExpanded ? (
-                            <ChevronUp size={14} className="toggle-chevron active" />
-                          ) : (
-                            <ChevronDown size={14} className="toggle-chevron" />
-                          )}
-                        </div>
-
-                        {isExpanded && (
-                          <div
-                            className="card-actions-inline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              className="btn-card-action"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onOpenEditTemplate(r);
-                              }}
-                              title="Modify workout template"
-                              aria-label="Edit template"
-                            >
-                              <Edit3 size={15} />
-                            </button>
-
-                            {allRoutines.length > 1 && (
-                              <button
-                                type="button"
-                                className="btn-card-action btn-delete-action"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRoutineToDelete(r);
-                                }}
-                                title="Delete template"
-                                aria-label="Delete template"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            )}
-                          </div>
+                      <div className="btn-toggle-movements">
+                        <span>{totalMovements} EXERCISE{totalMovements === 1 ? '' : 'S'}</span>
+                        {isExpanded ? (
+                          <ChevronUp size={14} className="toggle-chevron active" />
+                        ) : (
+                          <ChevronDown size={14} className="toggle-chevron" />
                         )}
-                      </>
+                      </div>
                     ) : (
                       <div className="empty-movements-row">
                         <span className="no-movements-text">0 EXERCISES</span>
-                        <div className="card-actions-inline">
-                          <button
-                            className="btn-card-action"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenEditTemplate(r);
-                            }}
-                            title="Modify workout template"
-                          >
-                            <Edit3 size={15} />
-                          </button>
-                          {allRoutines.length > 1 && (
-                            <button
-                              className="btn-card-action btn-delete-action"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRoutineToDelete(r);
-                              }}
-                              title="Delete template"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -267,11 +217,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                               <div
                                 key={`${item.exerciseId}-${idx}`}
                                 className="expanded-exercise-row"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onSelectRoutine(r.id);
-                                  onSelectExerciseToStart(idx, r.id);
-                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 {ex?.thumbnailUrl && (
                                   <div className="ex-seq-thumb">
@@ -302,7 +248,6 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                                     </span>
                                   </div>
                                 </div>
-                                <ChevronRight size={14} className="row-chevron" />
                               </div>
                             );
                           })}
@@ -361,11 +306,231 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                 onClick={() => {
                   onDeleteRoutine(routineToDelete.id);
                   setRoutineToDelete(null);
+                  setSelectedSummaryRoutineId(null);
                 }}
               >
                 Delete
               </button>
             </div>
+          </div>
+        </div>,
+        portalTarget
+      )}
+
+      {/* Workout Summary Full-Screen View */}
+      {selectedRoutineForSummary && portalTarget && createPortal(
+        <div
+          className="workout-summary-screen-view"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${selectedRoutineForSummary.title} summary`}
+          style={{ position: portalTarget === document.body ? 'fixed' : 'absolute' }}
+        >
+          {/* Universal Top AppBar like Workout Page */}
+          <header className="app-bar">
+            <div className="left-slot left-aligned-title">
+              <button
+                type="button"
+                className="appbar-back-btn ghost-back"
+                onClick={() => setSelectedSummaryRoutineId(null)}
+                aria-label="Go Back"
+                title="Go Back"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="appbar-left-title">Summary</h1>
+            </div>
+          </header>
+
+          {/* Scrollable Body */}
+          <div className="summary-content-body">
+            {/* Hero Cover Banner */}
+            <div className="summary-hero-banner">
+              <Image
+                src={getRoutineCoverImage(selectedRoutineForSummary)}
+                alt={selectedRoutineForSummary.title}
+                fill
+                className="summary-hero-image"
+                unoptimized
+                priority
+              />
+              <div className="summary-hero-scrim" />
+              <div className="summary-hero-content">
+                <h2 className="summary-hero-title">{selectedRoutineForSummary.title}</h2>
+              </div>
+            </div>
+
+            {/* Highlights Stats Grid */}
+            <div className="summary-stats-grid">
+              <div className="summary-stat-card">
+                <div className="stat-card-icon-wrap duration">
+                  <Clock size={16} />
+                </div>
+                <div className="stat-card-details">
+                  <span className="stat-card-value">~{selectedRoutineForSummary.estimatedMinutes || 25} min</span>
+                  <span className="stat-card-label">Estimated Time</span>
+                </div>
+              </div>
+
+              <div className="summary-stat-card">
+                <div className="stat-card-icon-wrap burn">
+                  <Flame size={16} />
+                </div>
+                <div className="stat-card-details">
+                  <span className="stat-card-value">
+                    {selectedRoutineForSummary.estimatedCalories ??
+                      Math.round((selectedRoutineForSummary.estimatedMinutes || 25) * 4)}{' '}
+                    cal
+                  </span>
+                  <span className="stat-card-label">Est. Calories</span>
+                </div>
+              </div>
+
+              <div className="summary-stat-card">
+                <div className="stat-card-icon-wrap moves">
+                  <Dumbbell size={16} />
+                </div>
+                <div className="stat-card-details">
+                  <span className="stat-card-value">
+                    {selectedRoutineForSummary.exercises?.length || 0}
+                  </span>
+                  <span className="stat-card-label">Movements</span>
+                </div>
+              </div>
+
+              <div className="summary-stat-card">
+                <div className="stat-card-icon-wrap sets">
+                  <Layers size={16} />
+                </div>
+                <div className="stat-card-details">
+                  <span className="stat-card-value">
+                    {selectedRoutineForSummary.exercises?.reduce(
+                      (acc, item) => acc + (item.targetSets || 0),
+                      0
+                    ) || 0}
+                  </span>
+                  <span className="stat-card-label">Total Sets</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Exercises Section Header */}
+            <div className="summary-section-header">
+              <h3 className="section-title">
+                EXERCISES
+              </h3>
+
+              <div className="card-actions-inline">
+                <button
+                  type="button"
+                  className="btn-card-action"
+                  onClick={() => onOpenEditTemplate(selectedRoutineForSummary)}
+                  title="Modify workout template"
+                  aria-label="Edit template"
+                >
+                  <Edit3 size={15} />
+                </button>
+
+                {allRoutines.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn-card-action btn-delete-action"
+                    onClick={() => setRoutineToDelete(selectedRoutineForSummary)}
+                    title="Delete template"
+                    aria-label="Delete template"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Exercise Breakdown List */}
+            <div className="summary-exercises-list">
+              {(!selectedRoutineForSummary.exercises || selectedRoutineForSummary.exercises.length === 0) ? (
+                <div className="summary-empty-exercises">
+                  <Dumbbell size={32} className="empty-icon" />
+                  <p>No exercises added to this template yet.</p>
+                  <button
+                    type="button"
+                    className="btn-edit-empty"
+                    onClick={() => onOpenEditTemplate(selectedRoutineForSummary)}
+                  >
+                    <Plus size={15} />
+                    <span>Add Exercises</span>
+                  </button>
+                </div>
+              ) : (
+                selectedRoutineForSummary.exercises.map((item, idx) => {
+                  const ex = getExerciseById(item.exerciseId);
+                  const exName = ex?.name || item.exerciseId;
+                  return (
+                    <div
+                      key={`${item.exerciseId}-${idx}`}
+                      className="summary-exercise-card"
+                      onClick={() => {
+                        if (ex && onOpenExerciseDetails) {
+                          onOpenExerciseDetails(ex);
+                        }
+                      }}
+                      role={ex && onOpenExerciseDetails ? 'button' : undefined}
+                    >
+                      <div className="summary-exercise-index">{idx + 1}</div>
+                      {ex?.thumbnailUrl && (
+                        <div className="summary-exercise-thumb">
+                          <Image
+                            src={ex.thumbnailUrl}
+                            alt={exName}
+                            width={56}
+                            height={50}
+                            className="thumb-img"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                      <div className="summary-exercise-info">
+                        <span className="summary-exercise-name">{exName}</span>
+                        <div className="summary-exercise-meta">
+                          <span className="summary-meta-pill">
+                            {item.targetSets} sets × {item.targetReps} reps
+                          </span>
+                          <span
+                            className={`summary-weight-pill ${
+                              item.targetWeightKg > 0 ? 'weighted' : 'bodyweight'
+                            }`}
+                          >
+                            {item.targetWeightKg > 0 ? `${item.targetWeightKg} kg` : 'Bodyweight'}
+                          </span>
+                          {ex?.category && (
+                            <span className="summary-muscle-pill">
+                              {ex.category}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {ex && onOpenExerciseDetails && (
+                        <ChevronRight size={16} className="summary-chevron" />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Sticky Bottom Action Bar */}
+          <div className="summary-footer">
+            <button
+              type="button"
+              className="btn-start-workout-action"
+              onClick={() => {
+                onSelectRoutine(selectedRoutineForSummary.id);
+                onStartWorkout(selectedRoutineForSummary.id);
+                setSelectedSummaryRoutineId(null);
+              }}
+            >
+              <span>Start Workout</span>
+            </button>
           </div>
         </div>,
         portalTarget
@@ -603,19 +768,19 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           background: rgba(255, 255, 255, 0.035);
           border: 1px solid rgba(255, 255, 255, 0.065);
           border-radius: 14px;
-          cursor: pointer;
+          cursor: default;
           transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .expanded-exercise-row:hover {
-          background: rgba(255, 255, 255, 0.075);
-          border-color: rgba(255, 255, 255, 0.14);
-          transform: translateY(-1px);
+          background: rgba(255, 255, 255, 0.035);
+          border-color: rgba(255, 255, 255, 0.065);
+          transform: none;
         }
 
         .expanded-exercise-row:active {
-          transform: translateY(0);
-          background: rgba(255, 255, 255, 0.05);
+          transform: none;
+          background: rgba(255, 255, 255, 0.035);
         }
 
         .ex-seq-thumb {
@@ -912,6 +1077,493 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
             opacity: 1;
             transform: scale(1) translateY(0);
           }
+        }
+
+        /* Workout Summary Screen Overlay */
+        .workout-summary-screen-view {
+          position: absolute;
+          inset: 0;
+          z-index: 150;
+          width: 100%;
+          height: 100%;
+          background: #08080a;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          animation: pageSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes pageSlideIn {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .app-bar {
+          position: sticky;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 70;
+          height: 56px;
+          background: rgba(8, 8, 10, 0.95);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          flex-shrink: 0;
+        }
+
+        .left-slot {
+          display: flex;
+          align-items: center;
+          min-width: 90px;
+        }
+
+        .left-slot.left-aligned-title {
+          flex: 1;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .appbar-left-title {
+          font-family: var(--font-display);
+          font-size: 1.08rem;
+          font-weight: 700;
+          color: #ffffff;
+          letter-spacing: -0.015em;
+          margin: 0;
+          line-height: 1.2;
+        }
+
+        .appbar-back-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          color: #ffffff;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.2s ease;
+          cursor: pointer;
+        }
+
+        .appbar-back-btn:hover {
+          background: rgba(255, 255, 255, 0.18);
+          transform: translateX(-2px);
+        }
+
+        .appbar-back-btn:active {
+          transform: scale(0.94);
+        }
+
+        .appbar-back-btn.ghost-back {
+          background: transparent;
+          border: none;
+          box-shadow: none;
+        }
+
+        .appbar-back-btn.ghost-back:hover {
+          background: transparent;
+          transform: translateX(-3px);
+          opacity: 0.8;
+        }
+
+        .appbar-back-btn.ghost-back:active {
+          transform: scale(0.92) translateX(-3px);
+          opacity: 0.65;
+        }
+
+        .summary-content-body {
+          flex: 1;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          padding-bottom: 96px;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .summary-content-body::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+
+        /* Summary Hero Banner */
+        .summary-hero-banner {
+          position: relative;
+          width: 100%;
+          height: 180px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 16px 20px 2px;
+          background: #000000;
+        }
+
+        .summary-hero-image {
+          object-fit: cover;
+          object-position: center;
+        }
+
+        .summary-hero-scrim {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(8, 8, 10, 0.2) 0%,
+            rgba(8, 8, 10, 0.5) 45%,
+            #08080a 100%
+          );
+          z-index: 1;
+        }
+
+        .summary-hero-content {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .summary-hero-title {
+          font-family: var(--font-display);
+          font-size: 1.6rem;
+          font-weight: 800;
+          color: #ffffff;
+          letter-spacing: -0.02em;
+          margin: 0;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Summary Stats Grid */
+        .summary-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          padding: 20px 20px 0 20px;
+        }
+
+        .summary-stat-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          background: rgba(255, 255, 255, 0.035);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 16px;
+        }
+
+        .stat-card-icon-wrap {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .stat-card-icon-wrap.duration {
+          background: rgba(59, 130, 246, 0.12);
+          color: #60a5fa;
+          border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .stat-card-icon-wrap.burn {
+          background: rgba(249, 115, 22, 0.12);
+          color: #fb923c;
+          border: 1px solid rgba(249, 115, 22, 0.25);
+        }
+
+        .stat-card-icon-wrap.moves {
+          background: rgba(168, 85, 247, 0.12);
+          color: #c084fc;
+          border: 1px solid rgba(168, 85, 247, 0.25);
+        }
+
+        .stat-card-icon-wrap.sets {
+          background: rgba(16, 185, 129, 0.12);
+          color: #34d399;
+          border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .stat-card-details {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+
+        .stat-card-value {
+          font-size: 14px;
+          font-weight: 700;
+          color: #ffffff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .stat-card-label {
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        /* Exercises Section */
+        .summary-section-header {
+          padding: 24px 20px 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .section-title {
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #94a3b8;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+          margin: 0;
+        }
+
+        .summary-exercises-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 0 20px;
+        }
+
+        .summary-empty-exercises {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 36px 20px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px dashed rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          gap: 12px;
+        }
+
+        .summary-empty-exercises p {
+          color: #94a3b8;
+          font-size: 13px;
+          margin: 0;
+        }
+
+        .btn-edit-empty {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 9px 18px;
+          background: rgba(59, 130, 246, 0.14);
+          border: 1px solid rgba(59, 130, 246, 0.35);
+          border-radius: 9999px;
+          color: #60a5fa;
+          font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn-edit-empty:hover {
+          background: rgba(59, 130, 246, 0.24);
+          color: #93c5fd;
+        }
+
+        .summary-exercise-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          background: rgba(255, 255, 255, 0.035);
+          border: 1px solid rgba(255, 255, 255, 0.065);
+          border-radius: 16px;
+          transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+          outline: none;
+        }
+
+        .summary-exercise-card[role='button'] {
+          cursor: pointer;
+        }
+
+        .summary-exercise-card:hover,
+        .summary-exercise-card:focus,
+        .summary-exercise-card:focus-visible,
+        .summary-exercise-card:active,
+        .summary-exercise-card[role='button']:hover,
+        .summary-exercise-card[role='button']:focus,
+        .summary-exercise-card[role='button']:focus-visible,
+        .summary-exercise-card[role='button']:active {
+          background: rgba(255, 255, 255, 0.035);
+          border-color: rgba(255, 255, 255, 0.065);
+          outline: none;
+          box-shadow: none;
+          transform: none;
+        }
+
+        .summary-exercise-index {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.06);
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .summary-exercise-thumb {
+          width: 56px;
+          height: 48px;
+          border-radius: 10px;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .summary-exercise-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .summary-exercise-name {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #ffffff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          letter-spacing: -0.01em;
+        }
+
+        .summary-exercise-meta {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .summary-meta-pill {
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        .summary-weight-pill {
+          font-size: 9.5px;
+          font-weight: 600;
+          padding: 1.5px 6px;
+          border-radius: 5px;
+          letter-spacing: 0.02em;
+        }
+
+        .summary-weight-pill.bodyweight {
+          background: rgba(255, 255, 255, 0.06);
+          color: #cbd5e1;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .summary-weight-pill.weighted {
+          background: rgba(59, 130, 246, 0.12);
+          color: #93c5fa;
+          border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .summary-muscle-pill {
+          font-size: 9.5px;
+          font-weight: 600;
+          padding: 1.5px 6px;
+          border-radius: 5px;
+          background: rgba(255, 255, 255, 0.04);
+          color: #94a3b8;
+          text-transform: capitalize;
+        }
+
+        :global(.summary-chevron) {
+          color: rgba(255, 255, 255, 0.25);
+          flex-shrink: 0;
+          transition: all 0.18s ease;
+        }
+
+        .summary-exercise-card:hover :global(.summary-chevron) {
+          color: rgba(255, 255, 255, 0.7);
+          transform: translateX(2px);
+        }
+
+        /* Sticky Bottom Footer */
+        .summary-footer {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 80;
+          padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          border-right: none;
+          border-bottom: none;
+          border-left: none;
+          outline: none;
+          box-shadow: none;
+          background: #0d0d12;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .btn-start-workout-action {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 16px 24px;
+          background: #ffffff;
+          border: none;
+          border-radius: 9999px;
+          color: #09090b;
+          font-family: var(--font-display);
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: none;
+          transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-start-workout-action:hover {
+          background: #f4f4f5;
+          transform: translateY(-1px);
+          box-shadow: none;
+        }
+
+        .btn-start-workout-action:active {
+          transform: scale(0.98);
+          background: #e4e4e7;
         }
       `}</style>
     </div>

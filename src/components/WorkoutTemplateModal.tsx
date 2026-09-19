@@ -49,6 +49,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
   const [title, setTitle] = useState('');
   const [exercises, setExercises] = useState<(RoutineExercise & { _uid?: string })[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [selectedMovementIds, setSelectedMovementIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [errorMessage, setErrorMessage] = useState('');
@@ -97,6 +98,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         setExercises([]);
       }
       setShowExercisePicker(false);
+      setSelectedMovementIds([]);
       setErrorMessage('');
       setSearchQuery('');
       setSelectedCategory('all');
@@ -437,25 +439,48 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     handleSwipeEnd();
   };
 
-  // Add exercise from picker
-  const handleAddExerciseFromPicker = (ex: Exercise) => {
-    const newRoutineEx: RoutineExercise & { _uid?: string } = {
-      _uid: `uid-${ex.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      exerciseId: ex.id,
-      targetSets: ex.defaultSets || 3,
-      targetReps: ex.defaultReps || 10,
-      targetWeightKg: ex.defaultWeightKg || 0,
-      sets: Array.from({ length: ex.defaultSets || 3 }, (_, i) => ({
-        setNumber: i + 1,
-        targetReps: ex.defaultReps || 10,
-        actualReps: ex.defaultReps || 10,
-        weightKg: ex.defaultWeightKg || 0,
-        completed: false,
-      })),
-    };
+  // Movement picker handlers
+  const handleToggleMovement = (id: string) => {
+    setSelectedMovementIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
-    setExercises((prev) => [...prev, newRoutineEx]);
+  const handleClosePicker = () => {
     setShowExercisePicker(false);
+    setSelectedMovementIds([]);
+    setSearchQuery('');
+    setSelectedCategory('all');
+  };
+
+  const handleAddSelectedExercises = () => {
+    if (selectedMovementIds.length === 0) return;
+
+    const toAdd: (RoutineExercise & { _uid?: string })[] = [];
+    selectedMovementIds.forEach((id, idx) => {
+      const ex = EXERCISE_LIBRARY.find((e) => e.id === id);
+      if (!ex) return;
+      toAdd.push({
+        _uid: `uid-${ex.id}-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+        exerciseId: ex.id,
+        targetSets: ex.defaultSets || 3,
+        targetReps: ex.defaultReps || 10,
+        targetWeightKg: ex.defaultWeightKg || 0,
+        sets: Array.from({ length: ex.defaultSets || 3 }, (_, i) => ({
+          setNumber: i + 1,
+          targetReps: ex.defaultReps || 10,
+          actualReps: ex.defaultReps || 10,
+          weightKg: ex.defaultWeightKg || 0,
+          completed: false,
+        })),
+      });
+    });
+
+    setExercises((prev) => [...prev, ...toAdd]);
+    setSelectedMovementIds([]);
+    setShowExercisePicker(false);
+    setSearchQuery('');
+    setSelectedCategory('all');
     setErrorMessage('');
   };
 
@@ -594,7 +619,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
               <button
                 type="button"
                 className="add-exercise-trigger-btn"
-                onClick={() => setShowExercisePicker(true)}
+                onClick={() => {
+                  setSelectedMovementIds([]);
+                  setShowExercisePicker(true);
+                }}
               >
                 <Plus size={15} />
                 <span>Add Exercise</span>
@@ -618,7 +646,13 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             </div>
 
             {exercises.length === 0 ? (
-              <div className="empty-exercises-card" onClick={() => setShowExercisePicker(true)}>
+              <div
+                className="empty-exercises-card"
+                onClick={() => {
+                  setSelectedMovementIds([]);
+                  setShowExercisePicker(true);
+                }}
+              >
                 <div className="empty-icon-wrap">
                   <Dumbbell size={32} />
                 </div>
@@ -885,90 +919,124 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           </button>
         </footer>
 
-        {/* Exercise Picker Overlay Sheet */}
+        {/* Exercise Picker Full Screen */}
         {showExercisePicker && (
-          <div className="picker-overlay animate-slide-up">
-            <div className="picker-header">
-              <div className="picker-header-text">
-                <h3>Select Movement</h3>
-                <span>Add an exercise to your workout sequence</span>
-              </div>
+          <div className="picker-screen-view">
+            <header className="page-header">
               <button
                 type="button"
-                className="close-picker-btn"
-                onClick={() => setShowExercisePicker(false)}
+                className="back-btn"
+                onClick={handleClosePicker}
+                aria-label="Go Back"
+                title="Go Back"
               >
-                <X size={18} />
+                <ArrowLeft size={18} />
               </button>
-            </div>
-
-            {/* Search Input */}
-            <div className="picker-search-box">
-              <Search size={16} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search by exercise or muscle group..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
-                autoFocus
-              />
-            </div>
-
-            {/* Category Filter Chips */}
-            <div className="picker-chips-scroll">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  className={`category-chip ${selectedCategory === cat.id ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat.id)}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Exercise List */}
-            <div className="picker-list">
-              {filteredLibrary.map((ex) => {
-                const isAlreadyIn = exercises.some((e) => e.exerciseId === ex.id);
-
-                return (
+              <h1 className="page-title">Select Movement</h1>
+              {selectedMovementIds.length > 0 && (
+                <div className="picker-header-actions">
                   <button
-                    key={ex.id}
                     type="button"
-                    className="picker-item"
-                    onClick={() => handleAddExerciseFromPicker(ex)}
+                    className="clear-selection-btn"
+                    onClick={() => setSelectedMovementIds([])}
                   >
-                    <Image
-                      src={ex.thumbnailUrl}
-                      alt={ex.name}
-                      width={56}
-                      height={42}
-                      className="picker-thumb"
-                      unoptimized
-                    />
-                    <div className="picker-info">
-                      <span className="picker-name">{ex.name}</span>
-                      <span className="picker-meta">
-                        {ex.category.toUpperCase()} · {ex.defaultSets} sets × {ex.defaultReps} reps
-                        {ex.defaultWeightKg ? ` · ${ex.defaultWeightKg}kg` : ''}
-                      </span>
-                    </div>
-                    <div className="picker-add-action">
-                      {isAlreadyIn ? (
-                        <span className="badge-already">Added</span>
-                      ) : (
-                        <div className="icon-circle-add">
-                          <Plus size={16} />
-                        </div>
-                      )}
-                    </div>
+                    Clear
                   </button>
-                );
-              })}
+                </div>
+              )}
+            </header>
+
+            <div className="picker-screen-body">
+              {/* Search Input */}
+              <div className="picker-search-box">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search by exercise or muscle group..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                  autoFocus
+                />
+              </div>
+
+              {/* Category Filter Chips */}
+              <div className="picker-chips-scroll">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    className={`category-chip ${selectedCategory === cat.id ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(cat.id)}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Exercise List */}
+              <div className="picker-list">
+                {filteredLibrary.map((ex) => {
+                  const isAlreadyIn = exercises.some((e) => e.exerciseId === ex.id);
+                  const isSelected = selectedMovementIds.includes(ex.id);
+
+                  return (
+                    <div
+                      key={ex.id}
+                      className={`picker-item ${isAlreadyIn ? 'already-added' : ''} ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        if (!isAlreadyIn) {
+                          handleToggleMovement(ex.id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={isAlreadyIn ? -1 : 0}
+                      aria-disabled={isAlreadyIn}
+                    >
+                      <Image
+                        src={ex.thumbnailUrl}
+                        alt={ex.name}
+                        width={56}
+                        height={42}
+                        className="picker-thumb"
+                        unoptimized
+                      />
+                      <div className="picker-info">
+                        <span className="picker-name">{ex.name}</span>
+                        <span className="picker-meta">{ex.category.toUpperCase()}</span>
+                      </div>
+                      <div className="picker-add-action">
+                        {isAlreadyIn || isSelected ? (
+                          <div className="icon-circle-check">
+                            <Check size={16} strokeWidth={2.5} />
+                          </div>
+                        ) : (
+                          <div className="icon-circle-add">
+                            <Plus size={16} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Picker Bottom Action Footer */}
+            <footer className="picker-footer">
+              <button
+                type="button"
+                className={`btn-add-selected ${selectedMovementIds.length > 0 ? 'active' : 'disabled'}`}
+                disabled={selectedMovementIds.length === 0}
+                onClick={handleAddSelectedExercises}
+              >
+                <span>
+                  {selectedMovementIds.length === 0
+                    ? 'Select exercises to add'
+                    : `Add ${selectedMovementIds.length} ${selectedMovementIds.length === 1 ? 'Exercise' : 'Exercises'}`}
+                </span>
+              </button>
+            </footer>
           </div>
         )}
 
@@ -1598,53 +1666,56 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             background: #e4e4e7;
           }
 
-          /* Exercise Picker Overlay */
-          .picker-overlay {
+          /* Exercise Picker Full Screen */
+          .picker-screen-view {
             position: absolute;
             inset: 0;
-            z-index: 10;
-            background: #121217;
+            z-index: 300;
+            width: 100%;
+            height: 100%;
+            background: #08080a;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            animation: pageSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
           }
 
-          .picker-header {
+          .picker-screen-body {
+            flex: 1;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+          }
+
+          .picker-header-actions {
+            margin-left: auto;
+            display: flex;
             align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 10px;
           }
 
-          .picker-header-text h3 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #f3f4f6;
-          }
 
-          .picker-header-text span {
+          .clear-selection-btn {
             font-size: 12px;
-            color: #6b7280;
+            font-weight: 600;
+            color: #9ca3af;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            transition: color 0.15s ease;
           }
 
-          .close-picker-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: #9ca3af;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+          .clear-selection-btn:hover {
+            color: #f3f4f6;
           }
 
           .picker-search-box {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin: 12px 18px 8px 18px;
+            margin: 16px 18px 0 18px;
             padding: 10px 14px;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1666,8 +1737,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
           .picker-chips-scroll {
             display: flex;
-            gap: 6px;
-            padding: 6px 18px;
+            gap: 8px;
+            margin-top: 14px;
+            margin-bottom: 14px;
+            padding: 4px 18px;
             overflow-x: auto;
             scrollbar-width: none;
           }
@@ -1677,7 +1750,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           }
 
           .category-chip {
-            padding: 5px 12px;
+            padding: 6px 14px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 20px;
@@ -1699,10 +1772,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
           .picker-list {
             flex: 1;
             overflow-y: auto;
-            padding: 10px 18px;
+            padding: 4px 18px 24px 18px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
           }
 
           .picker-item {
@@ -1715,12 +1788,25 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             border-radius: 14px;
             cursor: pointer;
             text-align: left;
-            transition: all 0.15s ease;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            outline: none;
           }
 
-          .picker-item:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(59, 130, 246, 0.3);
+          .picker-item:focus,
+          .picker-item:focus-visible {
+            outline: none;
+          }
+
+          .picker-item.selected,
+          .picker-item.already-added {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: none;
+          }
+
+          .picker-item.already-added {
+            cursor: default;
           }
 
           .picker-thumb {
@@ -1735,30 +1821,25 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 6px;
           }
 
           .picker-name {
             font-size: 13.5px;
             font-weight: 700;
             color: #f3f4f6;
+            line-height: 1.2;
           }
 
           .picker-meta {
             font-size: 11px;
             color: #9ca3af;
+            line-height: 1.2;
+            letter-spacing: 0.3px;
           }
 
-          .badge-already {
-            font-size: 10.5px;
-            padding: 3px 8px;
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border-radius: 6px;
-            font-weight: 600;
-          }
-
-          .icon-circle-add {
+          .icon-circle-add,
+          .icon-circle-check {
             width: 28px;
             height: 28px;
             border-radius: 50%;
@@ -1768,6 +1849,70 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.18s ease;
+          }
+
+          .picker-item.selected .icon-circle-check {
+            animation: checkPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          }
+
+          @keyframes checkPop {
+            0% {
+              transform: scale(0.6);
+              opacity: 0;
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+
+          .picker-footer {
+            padding: 14px 18px 18px 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            background: #0d0d12;
+            flex-shrink: 0;
+          }
+
+          .btn-add-selected {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 24px;
+            border-radius: 9999px;
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          .btn-add-selected.active {
+            background: #ffffff;
+            color: #09090b;
+            cursor: pointer;
+            box-shadow: none;
+          }
+
+          .btn-add-selected.active:hover {
+            background: #f4f4f5;
+            transform: translateY(-1px);
+          }
+
+          .btn-add-selected.active:active {
+            transform: scale(0.98);
+            background: #e4e4e7;
+          }
+
+          .btn-add-selected.disabled {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
           }
         `}</style>
     </div>
