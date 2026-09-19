@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { PhoneFrame } from '@/components/PhoneFrame';
 import { WorkoutOverview } from '@/components/WorkoutOverview';
 import { ActiveWorkoutPlayer } from '@/components/ActiveWorkoutPlayer';
-import { RestTimerModal } from '@/components/RestTimerModal';
 import { ExerciseDetailModal } from '@/components/ExerciseDetailModal';
 import { WorkoutSummaryModal } from '@/components/WorkoutSummaryModal';
 import { HistoryDrawer } from '@/components/HistoryDrawer';
@@ -53,9 +52,6 @@ export default function HomePage() {
 
   // 3. Modals & Drawers
   const [selectedExerciseForGuide, setSelectedExerciseForGuide] = useState<Exercise | null>(null);
-  const [showRestTimer, setShowRestTimer] = useState<boolean>(false);
-  const [restExerciseName, setRestExerciseName] = useState<string>('');
-  const [restNextSetNumber, setRestNextSetNumber] = useState<number>(1);
   const [summaryLog, setSummaryLog] = useState<WorkoutLog | null>(null);
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showAddExercise, setShowAddExercise] = useState<boolean>(false);
@@ -260,6 +256,61 @@ export default function HomePage() {
     }
   };
 
+  // Add a new set to the current active exercise (max 6)
+  const handleAddSet = () => {
+    const currentEx = currentRoutine.exercises[currentExerciseIndex];
+    if (!currentEx) return;
+
+    const existingSets = getSetsForExercise(
+      currentEx.exerciseId,
+      currentEx.targetSets,
+      currentEx.targetReps,
+      currentEx.targetWeightKg
+    );
+
+    if (existingSets.length >= 6) return;
+
+    const lastSet = existingSets[existingSets.length - 1];
+    const newSet: WorkoutSet = {
+      setNumber: existingSets.length + 1,
+      targetReps: lastSet ? lastSet.targetReps : currentEx.targetReps || 10,
+      actualReps: lastSet ? lastSet.actualReps : currentEx.targetReps || 10,
+      weightKg: lastSet ? lastSet.weightKg : currentEx.targetWeightKg || 0,
+      completed: false,
+    };
+
+    setExerciseProgress((prev) => ({
+      ...prev,
+      [currentEx.exerciseId]: [...existingSets, newSet],
+    }));
+  };
+
+  // Remove the last set from the current active exercise (min 1)
+  const handleRemoveSet = () => {
+    const currentEx = currentRoutine.exercises[currentExerciseIndex];
+    if (!currentEx) return;
+
+    const existingSets = getSetsForExercise(
+      currentEx.exerciseId,
+      currentEx.targetSets,
+      currentEx.targetReps,
+      currentEx.targetWeightKg
+    );
+
+    if (existingSets.length <= 1) return;
+
+    const updatedSets = existingSets.slice(0, existingSets.length - 1);
+
+    setExerciseProgress((prev) => ({
+      ...prev,
+      [currentEx.exerciseId]: updatedSets,
+    }));
+
+    if (currentSetIndex >= updatedSets.length) {
+      setCurrentSetIndex(updatedSets.length - 1);
+    }
+  };
+
   // Complete a set and advance
   const handleCompleteSet = (setIndex: number, reps: number, weightKg: number) => {
     const currentEx = currentRoutine.exercises[currentExerciseIndex];
@@ -291,31 +342,21 @@ export default function HomePage() {
     const isLastExerciseOfRoutine = currentExerciseIndex === currentRoutine.exercises.length - 1;
 
     if (isLastSetOfExercise && isLastExerciseOfRoutine) {
-      // Workout is finished!
-      finishWorkout(newProgress);
+      // First put a check on the last set, then finish workout
+      setTimeout(() => {
+        finishWorkout(newProgress);
+      }, 600);
     } else if (isLastSetOfExercise) {
-      // Exercise is finished, advance to next exercise
-      const nextExIndex = currentExerciseIndex + 1;
-      const nextExItem = currentRoutine.exercises[nextExIndex];
-      const nextExData = getExerciseById(nextExItem.exerciseId);
-
-      setCurrentExerciseIndex(nextExIndex);
-      setCurrentSetIndex(0);
-
-      // Trigger Rest Timer
-      setRestExerciseName(nextExData ? nextExData.name : 'Next Exercise');
-      setRestNextSetNumber(1);
-      setShowRestTimer(true);
+      // First put a check on the last set, then move to next exercise
+      setTimeout(() => {
+        const nextExIndex = currentExerciseIndex + 1;
+        setCurrentExerciseIndex(nextExIndex);
+        setCurrentSetIndex(0);
+      }, 600);
     } else {
-      // Advance to next set in current exercise
+      // Advance directly to next set in current exercise without rest screen
       const nextSetIdx = setIndex + 1;
       setCurrentSetIndex(nextSetIdx);
-
-      // Trigger Rest Timer
-      const exData = getExerciseById(currentEx.exerciseId);
-      setRestExerciseName(exData ? exData.name : 'Current Exercise');
-      setRestNextSetNumber(nextSetIdx + 1);
-      setShowRestTimer(true);
     }
   };
 
@@ -690,6 +731,8 @@ export default function HomePage() {
             onBackToOverview={() => setIsPlayerViewOpen(false)}
             onSetChange={(idx) => setCurrentSetIndex(idx)}
             onUpdateSet={handleUpdateSet}
+            onAddSet={handleAddSet}
+            onRemoveSet={handleRemoveSet}
             onCompleteSet={handleCompleteSet}
             onPreviousSet={handlePreviousSet}
             onSkipExercise={handleSkipExercise}
@@ -697,11 +740,6 @@ export default function HomePage() {
             onSelectExercise={(idx) => {
               setCurrentExerciseIndex(idx);
               setCurrentSetIndex(0);
-            }}
-            onOpenRestTimer={() => {
-              setRestExerciseName(activeExerciseData.name);
-              setRestNextSetNumber(currentSetIndex + 1);
-              setShowRestTimer(true);
             }}
           />
         </div>
@@ -788,18 +826,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 3. Rest Timer Overlay */}
-      {showRestTimer && (
-        <RestTimerModal
-          exerciseName={restExerciseName}
-          nextSetNumber={restNextSetNumber}
-          initialSeconds={60}
-          onComplete={() => setShowRestTimer(false)}
-          onSkip={() => setShowRestTimer(false)}
-        />
-      )}
-
-      {/* 4. Exercise Detail & Form Guide Modal (Modeled after FitnessAI) */}
+      {/* 3. Exercise Detail & Form Guide Modal (Modeled after FitnessAI) */}
       {selectedExerciseForGuide && (
         <ExerciseDetailModal
           exercise={selectedExerciseForGuide}

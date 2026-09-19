@@ -3,16 +3,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft,
-  List,
-  RotateCcw,
+  SkipBack,
   SkipForward,
   Check,
   Plus,
   Minus,
   Info,
   Play,
-  Pause,
-  Timer,
   Dumbbell
 } from 'lucide-react';
 import { Exercise, WorkoutSet, WorkoutRoutine } from '@/types/workout';
@@ -28,12 +25,13 @@ interface ActiveWorkoutPlayerProps {
   onBackToOverview: () => void;
   onSetChange: (setIndex: number) => void;
   onUpdateSet: (setIndex: number, reps: number, weightKg: number) => void;
+  onAddSet?: () => void;
+  onRemoveSet?: () => void;
   onCompleteSet: (setIndex: number, reps: number, weightKg: number) => void;
   onPreviousSet: () => void;
   onSkipExercise: () => void;
   onOpenExerciseDetails: () => void;
   onSelectExercise: (index: number) => void;
-  onOpenRestTimer: () => void;
 }
 
 export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
@@ -46,12 +44,13 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
   onBackToOverview,
   onSetChange,
   onUpdateSet,
+  onAddSet,
+  onRemoveSet,
   onCompleteSet,
   onPreviousSet,
   onSkipExercise,
   onOpenExerciseDetails,
   onSelectExercise,
-  onOpenRestTimer,
 }) => {
   const currentSet = sets[currentSetIndex] || {
     setNumber: currentSetIndex + 1,
@@ -63,9 +62,10 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
   const [reps, setReps] = useState<number>(currentSet.actualReps || currentSet.targetReps);
   const [weightKg, setWeightKg] = useState<number>(currentSet.weightKg || 0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(true);
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(false);
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState<boolean>(false);
   const [isEditingWeight, setIsEditingWeight] = useState<boolean>(false);
+  const [isFinishing, setIsFinishing] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -80,6 +80,16 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
       setWeightKg(exercise.defaultWeightKg || 0);
     }
   }, [currentSetIndex, exercise, sets]);
+
+  // Reset video and finishing state whenever exercise changes
+  useEffect(() => {
+    setIsVideoPlaying(false);
+    setIsFinishing(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [exercise.id]);
 
   // Adjust reps
   const handleIncrementReps = () => {
@@ -105,89 +115,107 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
   // Complete current set
   const handleNextSet = () => {
+    if (isFinishing) return;
+    if (isLastSet) {
+      setIsFinishing(true);
+    }
     onCompleteSet(currentSetIndex, reps, weightKg);
   };
 
   // Toggle video play/pause
   const toggleVideoPlayback = () => {
-    if (videoRef.current) {
-      if (isVideoPlaying) {
-        videoRef.current.pause();
-        setIsVideoPlaying(false);
-      } else {
-        videoRef.current.play();
-        setIsVideoPlaying(true);
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    if (video.paused) {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoPlaying(true);
+          })
+          .catch((err) => {
+            console.warn('Video play interrupted:', err);
+          });
       }
+    } else {
+      video.pause();
+      setIsVideoPlaying(false);
     }
+  };
+
+  const handleScreenClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    // Don't toggle video if user clicked any button, input, header action, or control badge
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('.weight-pill') ||
+      target.closest('.playlist-drawer') ||
+      target.closest('.player-header')
+    ) {
+      return;
+    }
+    toggleVideoPlayback();
   };
 
   const isLastSet = currentSetIndex === sets.length - 1;
   const isLastExercise = exerciseIndex === totalExercises - 1;
 
   return (
-    <div className="player-view animate-fade-in">
+    <div className="player-view animate-fade-in" onClick={handleScreenClick}>
       {/* Immersive Looping Exercise Video Background */}
-      <div className="video-background-container" onClick={toggleVideoPlayback}>
+      <div className="video-background-container">
         <video
           ref={videoRef}
           src={exercise.videoUrl}
-          autoPlay
           loop
           muted
           playsInline
+          preload="auto"
           className="exercise-video-bg"
+          onPlay={() => setIsVideoPlaying(true)}
+          onPause={() => setIsVideoPlaying(false)}
         />
 
         {/* Video Vignette & Readable Gradient Overlay */}
         <div className="video-overlay" />
-
-        {/* Video Play/Pause Indicator if paused */}
-        {!isVideoPlaying && (
-          <div className="video-paused-pill">
-            <Pause size={14} />
-            <span>Paused</span>
-          </div>
-        )}
       </div>
 
       {/* Quick Player Bar */}
       <header className="player-header">
-        <div className="exercise-progress-badge">
+        <button
+          type="button"
+          className="exercise-progress-badge"
+          onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
+          title="View all exercises in routine"
+        >
           <span>Exercise {exerciseIndex + 1} of {totalExercises}</span>
-        </div>
+        </button>
 
         <div className="header-right-actions">
           <button
+            type="button"
             className="guide-pill-btn"
             onClick={onOpenExerciseDetails}
             title="Exercise Form Instructions"
           >
-            <Info size={15} />
+            <Info size={14} />
             <span>Form Guide</span>
-          </button>
-          <button
-            className="header-icon-btn"
-            onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-            title="Routine Playlist"
-          >
-            <List size={20} />
           </button>
         </div>
       </header>
 
       {/* Routine Playlist Drawer (if opened) */}
       {showPlaylistDrawer && (
-        <div className="playlist-drawer animate-slide-up">
-          <div className="drawer-header">
-            <span>Exercises in {routine.title}</span>
-            <button
-              className="drawer-close-btn"
-              onClick={() => setShowPlaylistDrawer(false)}
-            >
-              ✕
-            </button>
-          </div>
-          <div className="drawer-list">
+        <>
+          <div
+            className="drawer-backdrop"
+            onClick={() => setShowPlaylistDrawer(false)}
+          />
+          <div className="playlist-drawer animate-slide-up">
+            <div className="drawer-list">
             {routine.exercises.map((item, idx) => {
               const isCurrent = idx === exerciseIndex;
               const exData = getExerciseById(item.exerciseId);
@@ -203,14 +231,12 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
                 >
                   <span className="drawer-item-num">{idx + 1}</span>
                   <span className="drawer-item-name">{exName}</span>
-                  <span className="drawer-item-sets">
-                    {item.targetSets} sets
-                  </span>
                 </button>
               );
             })}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Center Rep Counter Section (Matching Left Screen of Reference) */}
@@ -274,47 +300,113 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           </button>
         </div>
 
-        {/* Set Switcher Pills Bar (Matching Left Screen of Reference) */}
-        <div className="set-pills-bar">
-          {sets.map((set, idx) => {
-            const isCompleted = set.completed;
-            const isActive = idx === currentSetIndex;
-
-            return (
+        {/* Set Switcher Pills (First line up to 3 sets; extra sets shifted below) */}
+        <div className="set-pills-container">
+          <div className="set-pills-row">
+            {sets.length > 1 && onRemoveSet && (
               <button
-                key={set.setNumber}
-                className={`set-pill ${
-                  isActive ? 'active' : isCompleted ? 'completed' : 'upcoming'
-                }`}
-                onClick={() => onSetChange(idx)}
-                title={`Go to Set ${set.setNumber}`}
+                type="button"
+                className="set-pill action-btn remove-set-btn"
+                onClick={onRemoveSet}
+                title="Remove last set"
+                aria-label="Remove Set"
               >
-                {isCompleted ? (
-                  <Check size={18} strokeWidth={3} className="check-mark" />
-                ) : (
-                  <span>Set {set.setNumber}</span>
-                )}
+                <Minus size={16} />
               </button>
-            );
-          })}
+            )}
+
+            {sets.slice(0, 3).map((set, idx) => {
+              const isCompleted = set.completed;
+              const isActive = idx === currentSetIndex;
+
+              return (
+                <button
+                  key={set.setNumber}
+                  className={`set-pill ${
+                    isCompleted ? 'completed' : isActive ? 'active' : 'upcoming'
+                  }`}
+                  onClick={() => onSetChange(idx)}
+                  title={`Go to Set ${set.setNumber}`}
+                >
+                  {isCompleted ? (
+                    <Check size={18} strokeWidth={3} className="check-mark" />
+                  ) : (
+                    <span>Set {set.setNumber}</span>
+                  )}
+                </button>
+              );
+            })}
+
+            {sets.length <= 3 && sets.length < 6 && onAddSet && (
+              <button
+                type="button"
+                className="set-pill action-btn add-set-btn"
+                onClick={onAddSet}
+                title="Add another set (max 6)"
+                aria-label="Add Set"
+              >
+                <Plus size={16} />
+              </button>
+            )}
+          </div>
+
+          {sets.length > 3 && (
+            <div className="set-pills-row extra-sets-row">
+              {sets.slice(3).map((set, i) => {
+                const idx = 3 + i;
+                const isCompleted = set.completed;
+                const isActive = idx === currentSetIndex;
+
+                return (
+                  <button
+                    key={set.setNumber}
+                    className={`set-pill ${
+                      isCompleted ? 'completed' : isActive ? 'active' : 'upcoming'
+                    }`}
+                    onClick={() => onSetChange(idx)}
+                    title={`Go to Set ${set.setNumber}`}
+                  >
+                    {isCompleted ? (
+                      <Check size={18} strokeWidth={3} className="check-mark" />
+                    ) : (
+                      <span>Set {set.setNumber}</span>
+                    )}
+                  </button>
+                );
+              })}
+
+              {sets.length < 6 && onAddSet && (
+                <button
+                  type="button"
+                  className="set-pill action-btn add-set-btn"
+                  onClick={onAddSet}
+                  title="Add another set (max 6)"
+                  aria-label="Add Set"
+                >
+                  <Plus size={16} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Bottom Controls Bar (Matching Left Screen of Reference) */}
       <footer className="player-footer">
-        {/* Reset / Previous Set (Left circle button) */}
+        {/* Skip to Previous Exercise (Left circle button) */}
         <button
           className="btn-circle footer-btn"
           onClick={onPreviousSet}
-          title="Previous Set or Reset"
+          title="Previous Exercise"
         >
-          <RotateCcw size={22} />
+          <SkipBack size={22} />
         </button>
 
         {/* Next Set / Finish Primary Action (Center white pill button) */}
         <button
           className="btn-primary-pill next-set-btn"
           onClick={handleNextSet}
+          disabled={isFinishing}
         >
           <span>
             {isLastSet && isLastExercise
@@ -380,23 +472,6 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           pointer-events: none;
         }
 
-        .video-paused-pill {
-          position: absolute;
-          top: 70px;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          background: rgba(0, 0, 0, 0.65);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: var(--radius-pill);
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          backdrop-filter: blur(8px);
-        }
-
         /* Header Bar */
         .player-header {
           position: relative;
@@ -407,19 +482,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           padding-top: 4px;
         }
 
-        .exercise-progress-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 6px 12px;
-          background: rgba(0, 0, 0, 0.45);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: var(--radius-pill);
-          font-size: 0.76rem;
-          font-weight: 600;
-          color: var(--text-secondary);
-        }
-
+        .exercise-progress-badge,
         .guide-pill-btn {
           display: inline-flex;
           align-items: center;
@@ -427,34 +490,27 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           padding: 6px 12px;
           background: rgba(0, 0, 0, 0.45);
           backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: var(--radius-pill);
-          font-size: 0.78rem;
+          font-size: 0.76rem;
           font-weight: 600;
-          color: #e4e4e7;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.15s ease;
         }
 
+        .exercise-progress-badge:hover,
         .guide-pill-btn:hover {
-          background: rgba(255, 255, 255, 0.18);
-        }
-
-        .header-icon-btn {
-          width: 38px;
-          height: 38px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          background: rgba(255, 255, 255, 0.12);
           color: #e4e4e7;
-          background: rgba(0, 0, 0, 0.45);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-color: rgba(255, 255, 255, 0.22);
         }
 
-        .header-icon-btn:hover {
-          background: rgba(255, 255, 255, 0.18);
+        .exercise-progress-badge:active,
+        .guide-pill-btn:active {
+          transform: scale(0.96);
         }
-
         .header-right-actions {
           display: flex;
           align-items: center;
@@ -462,41 +518,31 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
         }
 
         /* Playlist Drawer */
+        .drawer-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 45;
+        }
+
         .playlist-drawer {
           position: absolute;
-          top: 68px;
-          left: 16px;
-          right: 16px;
+          top: 58px;
+          left: 20px;
+          width: 50%;
           background: #141418;
           border: 1px solid var(--border-active);
           border-radius: var(--radius-md);
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
           z-index: 50;
-          padding: 12px;
+          padding: 8px;
           max-height: 280px;
           overflow-y: auto;
-        }
-
-        .drawer-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding-bottom: 8px;
-          border-bottom: 1px solid var(--border-subtle);
-          font-size: 0.8rem;
-          color: var(--text-muted);
-          text-transform: uppercase;
-        }
-
-        .drawer-close-btn {
-          color: var(--text-muted);
         }
 
         .drawer-list {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          margin-top: 8px;
         }
 
         .drawer-item {
@@ -525,15 +571,13 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
         .drawer-item-name {
           flex: 1;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           font-weight: 600;
           color: #e4e4e7;
           text-transform: capitalize;
-        }
-
-        .drawer-item-sets {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         /* Center Content Overlay */
@@ -544,12 +588,12 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           flex-direction: column;
           align-items: center;
           margin-top: auto;
-          margin-bottom: 24px;
+          margin-bottom: 42px;
         }
 
         /* Weight Badge */
         .weight-badge-container {
-          margin-bottom: 16px;
+          margin-bottom: 32px;
         }
 
         .weight-pill {
@@ -606,7 +650,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           align-items: center;
           justify-content: center;
           gap: 28px;
-          margin-bottom: 28px;
+          margin-bottom: 30px;
         }
 
         .rep-adjust-btn {
@@ -653,32 +697,108 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
         }
 
-        /* Set Progress Pills Bar (Matching Reference) */
-        .set-pills-bar {
+        /* Set Progress Pills Container (Shift extra sets below first line without horizontal scrolling) */
+        .set-pills-container,
+        :global(.set-pills-container) {
           display: flex;
+          flex-direction: column;
           align-items: center;
           gap: 10px;
-          padding: 0 8px;
-          overflow-x: auto;
+          padding: 0 4px;
+          width: 100%;
           max-width: 100%;
         }
 
-        .set-pill {
-          height: 44px;
-          min-width: 96px;
-          padding: 0 16px;
+        .set-pills-row,
+        :global(.set-pills-row) {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          width: 100%;
+        }
+
+        .set-pills-row.extra-sets-row,
+        :global(.set-pills-row.extra-sets-row) {
+          animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .set-pill.action-btn,
+        .set-pill.add-set-btn,
+        .set-pill.remove-set-btn,
+        :global(.set-pill.action-btn),
+        :global(.set-pill.add-set-btn),
+        :global(.set-pill.remove-set-btn) {
+          min-width: 38px;
+          width: 38px;
+          height: 38px;
+          padding: 0;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          color: rgba(255, 255, 255, 0.75);
+          border: 1px dashed rgba(255, 255, 255, 0.28);
+          cursor: pointer;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.18s ease;
+        }
+
+        .set-pill.action-btn:hover,
+        .set-pill.add-set-btn:hover,
+        .set-pill.remove-set-btn:hover,
+        :global(.set-pill.action-btn:hover),
+        :global(.set-pill.add-set-btn:hover),
+        :global(.set-pill.remove-set-btn:hover) {
+          background: rgba(255, 255, 255, 0.22);
+          color: #e4e4e7;
+          border-color: rgba(255, 255, 255, 0.45);
+          transform: scale(1.08);
+        }
+
+        .set-pill.action-btn:active,
+        .set-pill.add-set-btn:active,
+        .set-pill.remove-set-btn:active,
+        :global(.set-pill.action-btn:active),
+        :global(.set-pill.add-set-btn:active),
+        :global(.set-pill.remove-set-btn:active) {
+          transform: scale(0.92);
+        }
+
+        .set-pill,
+        :global(.set-pill) {
+          height: 40px;
+          min-width: 76px;
+          padding: 0 12px;
           border-radius: var(--radius-pill);
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: var(--font-display);
-          font-size: 0.92rem;
+          font-size: 0.88rem;
           font-weight: 600;
           transition: all 0.2s ease;
+          flex-shrink: 0;
+          cursor: pointer;
         }
 
         /* Completed: White Pill with Checkmark (Matching Reference) */
-        .set-pill.completed {
+        .set-pill.completed,
+        :global(.set-pill.completed) {
           background: #e4e4e7;
           color: #09090b;
           box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
@@ -689,7 +809,8 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
         }
 
         /* Active Set Pill: Dark Pill with subtle border (Matching Reference "Set 3") */
-        .set-pill.active {
+        .set-pill.active,
+        :global(.set-pill.active) {
           background: rgba(255, 255, 255, 0.35);
           backdrop-filter: blur(16px);
           color: #e4e4e7;
@@ -698,14 +819,16 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
         }
 
         /* Upcoming Set Pill: Subdued Translucent */
-        .set-pill.upcoming {
+        .set-pill.upcoming,
+        :global(.set-pill.upcoming) {
           background: rgba(255, 255, 255, 0.18);
           backdrop-filter: blur(12px);
           color: rgba(255, 255, 255, 0.8);
           border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .set-pill.upcoming:hover {
+        .set-pill.upcoming:hover,
+        :global(.set-pill.upcoming:hover) {
           background: rgba(255, 255, 255, 0.25);
           color: #e4e4e7;
         }
