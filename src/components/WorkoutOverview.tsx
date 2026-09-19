@@ -24,6 +24,8 @@ import { getExerciseById, getRoutineCoverImage } from '@/data/exercises';
 interface WorkoutOverviewProps {
   routine: WorkoutRoutine;
   allRoutines: WorkoutRoutine[];
+  selectedSummaryRoutineId?: string | null;
+  onSelectSummaryRoutine?: (routineId: string | null) => void;
   onSelectRoutine: (routineId: string) => void;
   onStartWorkout: (routineId?: string) => void;
   onSelectExerciseToStart: (exerciseIndex: number, routineId?: string) => void;
@@ -48,6 +50,8 @@ interface WorkoutOverviewProps {
 export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   routine,
   allRoutines,
+  selectedSummaryRoutineId: propSelectedSummaryRoutineId,
+  onSelectSummaryRoutine,
   onSelectRoutine,
   onStartWorkout,
   onSelectExerciseToStart,
@@ -63,8 +67,21 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   // Track routine pending deletion for custom confirmation modal
   const [routineToDelete, setRoutineToDelete] = useState<WorkoutRoutine | null>(null);
   // Track routine selected to preview in full-screen summary view
-  const [selectedSummaryRoutineId, setSelectedSummaryRoutineId] = useState<string | null>(null);
+  const [internalSelectedSummaryRoutineId, setInternalSelectedSummaryRoutineId] = useState<string | null>(null);
   const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+
+  const selectedSummaryRoutineId =
+    propSelectedSummaryRoutineId !== undefined
+      ? propSelectedSummaryRoutineId
+      : internalSelectedSummaryRoutineId;
+
+  const setSelectedSummaryRoutineId = (id: string | null) => {
+    if (onSelectSummaryRoutine) {
+      onSelectSummaryRoutine(id);
+    } else {
+      setInternalSelectedSummaryRoutineId(id);
+    }
+  };
 
   const selectedRoutineForSummary =
     allRoutines.find((r) => r.id === selectedSummaryRoutineId) || null;
@@ -517,10 +534,13 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
               onClick={() => {
                 onSelectRoutine(selectedRoutineForSummary.id);
                 onStartWorkout(selectedRoutineForSummary.id);
-                setSelectedSummaryRoutineId(null);
               }}
             >
-              <span>Start Workout</span>
+              <span>
+                {isSessionActive && routine.id === selectedRoutineForSummary.id
+                  ? 'Resume Workout'
+                  : 'Start Workout'}
+              </span>
             </button>
           </div>
         </div>,
@@ -1294,7 +1314,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         .summary-exercises-list {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 16px;
           padding: 0 20px;
         }
 

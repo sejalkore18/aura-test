@@ -43,6 +43,7 @@ export default function HomePage() {
   // 2. Active Session State
   const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
   const [isPlayerViewOpen, setIsPlayerViewOpen] = useState<boolean>(false);
+  const [selectedSummaryRoutineId, setSelectedSummaryRoutineId] = useState<string | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [currentSetIndex, setCurrentSetIndex] = useState<number>(0);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -180,6 +181,9 @@ export default function HomePage() {
       }
     }
 
+    const activeRoutineId = targetRoutineId || currentRoutineId;
+    setSelectedSummaryRoutineId(activeRoutineId);
+
     if (!activeRoutine || !activeRoutine.exercises || activeRoutine.exercises.length === 0) {
       handleOpenCreateTemplate();
       return;
@@ -221,6 +225,9 @@ export default function HomePage() {
         }
       }
     }
+
+    const activeRoutineId = targetRoutineId || currentRoutineId;
+    setSelectedSummaryRoutineId(activeRoutineId);
 
     if (!isSessionActive || targetRoutineId) {
       handleStartWorkout(targetRoutineId);
@@ -468,6 +475,7 @@ export default function HomePage() {
     // Reset active session and show celebratory modal
     setIsSessionActive(false);
     setIsPlayerViewOpen(false);
+    setSelectedSummaryRoutineId(null);
     setSummaryLog(newLog);
   };
 
@@ -695,9 +703,15 @@ export default function HomePage() {
 
   const showBackButton = isPlayerViewOpen || activeTab !== 'dashboard';
 
+  const handleBackToWorkoutSummary = () => {
+    setIsPlayerViewOpen(false);
+    setActiveTab('workout');
+    setSelectedSummaryRoutineId(currentRoutineId);
+  };
+
   const handleAppBarBack = () => {
     if (isPlayerViewOpen) {
-      setIsPlayerViewOpen(false);
+      handleBackToWorkoutSummary();
     } else if (activeTab !== 'dashboard') {
       setActiveTab('dashboard');
     }
@@ -765,7 +779,7 @@ export default function HomePage() {
             routine={currentRoutine}
             sets={activeSets}
             currentSetIndex={currentSetIndex}
-            onBackToOverview={() => setIsPlayerViewOpen(false)}
+            onBackToOverview={handleBackToWorkoutSummary}
             onSetChange={(idx) => setCurrentSetIndex(idx)}
             onUpdateSet={handleUpdateSet}
             onAddSet={handleAddSet}
@@ -812,6 +826,8 @@ export default function HomePage() {
               <WorkoutOverview
                 routine={currentRoutine}
                 allRoutines={routines}
+                selectedSummaryRoutineId={selectedSummaryRoutineId}
+                onSelectSummaryRoutine={setSelectedSummaryRoutineId}
                 onSelectRoutine={handleSelectRoutine}
                 onStartWorkout={handleStartWorkout}
                 onSelectExerciseToStart={handleSelectExerciseToStart}
