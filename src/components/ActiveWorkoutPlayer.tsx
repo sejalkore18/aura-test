@@ -147,13 +147,16 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
   const handleScreenClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    // Don't toggle video if user clicked any button, input, header action, or control badge
+    // Don't toggle video if user clicked any button, input, header action, control section, or footer
     if (
       target.closest('button') ||
       target.closest('input') ||
       target.closest('.weight-pill') ||
       target.closest('.playlist-drawer') ||
-      target.closest('.player-header')
+      target.closest('.player-header') ||
+      target.closest('.center-content') ||
+      target.closest('.sets-row-wrapper') ||
+      target.closest('.player-footer')
     ) {
       return;
     }
@@ -436,17 +439,22 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           flex: 1;
           min-height: 100%;
           color: #e4e4e7;
+          background: #000000;
           overflow: hidden;
           padding: 16px 20px 24px;
         }
 
-        /* Immersive Video Background */
+        /* Top-Anchored Exercise Demonstration Video */
         .video-background-container {
           position: absolute;
-          inset: 0;
+          top: 48px;
+          left: 0;
+          right: 0;
+          height: 48%;
+          max-height: 440px;
           z-index: 1;
           overflow: hidden;
-          background: #0a0a0d;
+          background: #000000;
           cursor: pointer;
         }
 
@@ -454,19 +462,19 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           width: 100%;
           height: 100%;
           object-fit: cover;
-          filter: brightness(0.9) contrast(1.05);
+          object-position: center center;
+          filter: brightness(0.92) contrast(1.05);
         }
 
-        /* Gradient & Vignette Overlay */
+        /* Gradient & Vignette Overlay Fading to Solid Black */
         .video-overlay {
           position: absolute;
           inset: 0;
           background: linear-gradient(
             to bottom,
-            rgba(0, 0, 0, 0.75) 0%,
-            rgba(0, 0, 0, 0.2) 30%,
-            rgba(0, 0, 0, 0.4) 60%,
-            rgba(0, 0, 0, 0.92) 90%,
+            #000000 0%,
+            transparent 12%,
+            transparent 78%,
             #000000 100%
           );
           pointer-events: none;
