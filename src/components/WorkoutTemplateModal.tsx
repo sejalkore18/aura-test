@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import {
   ArrowLeft,
@@ -18,7 +19,7 @@ import {
   AlertTriangle,
   Flame,
 } from 'lucide-react';
-import { WorkoutRoutine, RoutineExercise, Exercise } from '@/types/workout';
+import { WorkoutRoutine, RoutineExercise, Exercise, DayKey } from '@/types/workout';
 import { EXERCISE_LIBRARY, getExerciseById } from '@/data/exercises';
 
 interface WorkoutTemplateModalProps {
@@ -59,6 +60,8 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
   const [dragItemHeight, setDragItemHeight] = useState(120);
   const [isDraggingActive, setIsDraggingActive] = useState(false);
   const [isDropping, setIsDropping] = useState(false);
+  const [scheduledDays, setScheduledDays] = useState<DayKey[]>([]);
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
 
   const dragItemRef = React.useRef<number | null>(null);
   const dragOverRef = React.useRef<number | null>(null);
@@ -86,6 +89,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     if (isOpen) {
       if (mode === 'edit' && initialRoutine) {
         setTitle(initialRoutine.title);
+        setScheduledDays(initialRoutine.scheduledDays ?? []);
         setExercises(
           initialRoutine.exercises.map((ex, i) => ({
             ...ex,
@@ -95,6 +99,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         );
       } else {
         setTitle('');
+        setScheduledDays([]);
         setExercises([]);
       }
       setShowExercisePicker(false);
@@ -122,6 +127,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       swipeStartRef.current = null;
     }
   }, [isOpen, mode, initialRoutine]);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -516,6 +525,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       exercises: exercises.map(({ _uid, ...rest }) => rest),
       isCustom: true,
       coverImage,
+      scheduledDays: scheduledDays.length > 0 ? scheduledDays : undefined,
     };
 
     onSave(savedRoutine);
@@ -542,7 +552,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     return matchesQuery && matchesCat;
   });
 
-  return (
+  const content = (
     <div
       className="template-page-view"
       role="region"
@@ -611,6 +621,35 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Training Days Selector */}
+          <div className="days-selector-group">
+            <label className="input-label">Training Days</label>
+            <div className="days-pills-row">
+              {(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as DayKey[]).map((day) => {
+                const labels: Record<DayKey, string> = { sun: 'S', mon: 'M', tue: 'T', wed: 'W', thu: 'T', fri: 'F', sat: 'S' };
+                const fullLabels: Record<DayKey, string> = { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' };
+                const isSelected = scheduledDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    className={`day-pill ${isSelected ? 'day-pill--active' : ''}`}
+                    onClick={() => {
+                      setScheduledDays((prev) =>
+                        prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+                      );
+                    }}
+                    aria-pressed={isSelected}
+                    aria-label={fullLabels[day]}
+                    title={fullLabels[day]}
+                  >
+                    {labels[day]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Exercises Sequence Section */}
@@ -1042,9 +1081,9 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
         <style jsx>{`
           .template-page-view {
-            position: absolute;
+            position: fixed;
             inset: 0;
-            z-index: 200;
+            z-index: 10000;
             width: 100%;
             height: 100%;
             background: #08080a;
@@ -1217,6 +1256,60 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
             background: rgba(59, 130, 246, 0.15);
             border-color: rgba(59, 130, 246, 0.4);
             color: #93c5fd;
+          }
+
+          .days-selector-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .days-pills-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+          }
+
+          .day-pill {
+            flex: 1;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            letter-spacing: 0.01em;
+          }
+
+          .day-pill:hover {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.35);
+            color: #93c5fd;
+            transform: translateY(-1px);
+          }
+
+          .day-pill:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #6b7280;
+            transform: none;
+          }
+
+          .day-pill--active,
+          .day-pill--active:hover,
+          .day-pill--active:focus {
+            background: rgba(59, 130, 246, 0.22);
+            border-color: #3b82f659;
+            color: #bfdbfe;
+            transform: none;
           }
 
           .stats-preview-bar {
@@ -1917,4 +2010,6 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         `}</style>
     </div>
   );
+
+  return portalTarget ? createPortal(content, portalTarget) : null;
 };

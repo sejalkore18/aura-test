@@ -23,6 +23,7 @@ import {
   RoutineExercise,
   UserProfile,
   USER_PROFILES,
+  DayKey,
 } from '@/types/workout';
 import { DEFAULT_ROUTINES, getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 import { INITIAL_WORKOUT_LOGS } from '@/data/mockWorkoutLogs';
@@ -66,6 +67,14 @@ export default function HomePage() {
   // Find active routine object
   const currentRoutine: WorkoutRoutine =
     routines.find((r) => r.id === currentRoutineId) || routines[0] || DEFAULT_ROUTINES[0];
+
+  // Derive today's scheduled routine
+  const DAY_KEYS: DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const todayDayKey: DayKey = DAY_KEYS[new Date().getDay()];
+  const todayRoutine: WorkoutRoutine | undefined = routines.find(
+    (r) => r.scheduledDays && r.scheduledDays.includes(todayDayKey)
+  );
+  const isRestDay = !todayRoutine;
 
   // Initialize and load from localStorage
   useEffect(() => {
@@ -804,7 +813,8 @@ export default function HomePage() {
                 activeUser={activeUser}
                 allUsers={USER_PROFILES}
                 onSwitchUser={handleSwitchUser}
-                currentRoutine={currentRoutine}
+                currentRoutine={todayRoutine ?? currentRoutine}
+                isRestDay={isRestDay}
                 isSessionActive={isSessionActive}
                 completedExerciseIds={completedExerciseIds}
                 workoutLogs={workoutLogs}

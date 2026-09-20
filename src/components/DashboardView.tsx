@@ -99,6 +99,7 @@ interface DashboardViewProps {
   allUsers: UserProfile[];
   onSwitchUser: (userId: 'sejal' | 'bhaumik') => void;
   currentRoutine: WorkoutRoutine;
+  isRestDay?: boolean;
   isSessionActive: boolean;
   completedExerciseIds: string[];
   workoutLogs: WorkoutLog[];
@@ -114,6 +115,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   allUsers,
   onSwitchUser,
   currentRoutine,
+  isRestDay = false,
   isSessionActive,
   completedExerciseIds,
   workoutLogs,
@@ -389,18 +391,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. "Workout Progress" Banner Card (Deep Charcoal Hero Card) */}
       <section
-        className={`workout-progress-card ${isExiting ? 'card-fade-out' : 'animate-card-fade'}`}
+        className={`workout-progress-card ${isExiting ? 'card-fade-out' : 'animate-card-fade'} ${isRestDay && !isWorkoutInProgress ? 'workout-progress-card--rest' : ''}`}
         key={`workout-${activeUser.id}`}
-        onClick={onStartWorkout}
-        role="button"
-        tabIndex={0}
-        aria-label="Start or view today's workout"
+        onClick={isRestDay && !isWorkoutInProgress ? undefined : onStartWorkout}
+        role={isRestDay && !isWorkoutInProgress ? undefined : 'button'}
+        tabIndex={isRestDay && !isWorkoutInProgress ? undefined : 0}
+        aria-label={isRestDay && !isWorkoutInProgress ? "Rest day" : "Start or view today's workout"}
       >
         <div className="progress-card-content">
           <div className="progress-text-block">
             <h2 className="progress-title">Today&apos;s Workout</h2>
             <p className="progress-subtitle">
-              {isWorkoutInProgress
+              {isRestDay && !isWorkoutInProgress
+                ? 'Rest & recover 🛋️'
+                : isWorkoutInProgress
                 ? isAllCompleted
                   ? 'All exercises completed! 🎉'
                   : `${exercisesLeft} exercise${exercisesLeft === 1 ? '' : 's'} left`
@@ -408,7 +412,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
           </div>
 
-          {isWorkoutInProgress ? (
+          {isRestDay && !isWorkoutInProgress ? (
+            <div className="rest-day-icon" aria-hidden="true">
+              🌙
+            </div>
+          ) : isWorkoutInProgress ? (
             <div className="progress-ring-box">
               {renderProgressRing(
                 calculatedPercent,
@@ -772,6 +780,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         .workout-progress-card:active {
           transform: scale(0.985);
+        }
+
+        .workout-progress-card--rest {
+          cursor: default;
+          background: rgba(18, 18, 26, 0.75);
+          border-color: rgba(99, 102, 241, 0.18);
+          box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(99, 102, 241, 0.08);
+        }
+
+        .workout-progress-card--rest:hover {
+          transform: none;
+          box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(99, 102, 241, 0.1);
+          background: rgba(18, 18, 26, 0.75);
+          border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .workout-progress-card--rest .progress-title {
+          color: #a5b4fc;
+        }
+
+        .workout-progress-card--rest .progress-subtitle {
+          color: #6b7280;
+        }
+
+        .rest-day-icon {
+          font-size: 2rem;
+          line-height: 1;
+          opacity: 0.7;
+          flex-shrink: 0;
         }
 
         .progress-card-content {

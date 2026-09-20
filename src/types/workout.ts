@@ -32,6 +32,8 @@ export interface RoutineExercise {
   sets: WorkoutSet[];
 }
 
+export type DayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+
 export interface WorkoutRoutine {
   id: string;
   title: string;
@@ -41,6 +43,7 @@ export interface WorkoutRoutine {
   exercises: RoutineExercise[];
   isCustom?: boolean;
   coverImage?: string;
+  scheduledDays?: DayKey[];
 }
 
 export interface ActiveSession {
