@@ -96,7 +96,7 @@ button:active {
   font-weight: 600;
   padding: 18px 32px;
   border-radius: var(--radius-pill);
-  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+  box-shadow: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +106,7 @@ button:active {
 }
 .btn-primary-pill:hover {
   background: #d4d4d8;
-  box-shadow: 0 8px 28px rgba(255, 255, 255, 0.28);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 .btn-primary-pill:active {

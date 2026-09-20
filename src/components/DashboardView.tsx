@@ -1161,14 +1161,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           border: none;
           cursor: pointer;
           transition: all 0.18s ease;
-          box-shadow: 0 4px 14px rgba(255, 255, 255, 0.18);
+          box-shadow: none;
           margin-top: 4px;
         }
 
         .no-activity-start-btn:hover {
           background: #e4e4e7;
           transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(255, 255, 255, 0.28);
+          box-shadow: none;
         }
 
         .no-activity-start-btn:active {

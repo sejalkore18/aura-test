@@ -17,6 +17,7 @@ import {
   Clock,
   Flame,
   Layers,
+  CalendarDays,
 } from 'lucide-react';
 import { WorkoutRoutine, RoutineExercise, Exercise } from '@/types/workout';
 import { getExerciseById, getRoutineCoverImage } from '@/data/exercises';
@@ -420,6 +421,24 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                   </span>
                 </div>
               </div>
+
+              {/* Scheduled Days */}
+              {selectedRoutineForSummary.scheduledDays && selectedRoutineForSummary.scheduledDays.length > 0 && (
+                <div className="summary-days-row">
+                  <div className="summary-chip summary-days-chip">
+                    <CalendarDays size={13} className="chip-icon icon-blue" />
+                    <span className="summary-days-label">
+                      {(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const)
+                        .filter((day) => selectedRoutineForSummary.scheduledDays!.includes(day))
+                        .map((day) => {
+                          const fullLabels = { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' };
+                          return fullLabels[day];
+                        })
+                        .join(' · ')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Exercises Section Header */}
@@ -1292,6 +1311,26 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
         .chip-icon.icon-emerald {
           color: #34d399;
+        }
+
+        .chip-icon.icon-blue {
+          color: #60a5fa;
+        }
+
+        .summary-days-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 2px;
+        }
+
+        .summary-days-chip {
+          font-weight: 500;
+          letter-spacing: 0.01em;
+        }
+
+        .summary-days-label {
+          color: rgba(255, 255, 255, 0.9);
         }
 
         /* Exercises Section */

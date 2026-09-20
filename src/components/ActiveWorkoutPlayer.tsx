@@ -855,7 +855,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
         :global(.set-pill.completed) {
           background: #e4e4e7;
           color: #09090b;
-          box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+          box-shadow: none;
         }
 
         :global(.check-mark) {
@@ -881,7 +881,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           backdrop-filter: blur(16px);
           color: #e4e4e7;
           border: 1px solid rgba(255, 255, 255, 0.35);
-          box-shadow: 0 0 16px rgba(255, 255, 255, 0.15);
+          box-shadow: none;
         }
 
         /* Upcoming Set Pill: Subdued Translucent */
@@ -915,6 +915,11 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
         .next-set-btn {
           flex: 1;
+          box-shadow: none;
+        }
+
+        .next-set-btn:hover {
+          box-shadow: none;
         }
       `}</style>
     </div>

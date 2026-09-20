@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
-import { MonthCalendarModal } from '@/components/MonthCalendarModal';
 
 interface CalendarStripProps {
   workoutDates: Set<string>; // ISO strings: 'YYYY-MM-DD'
@@ -15,50 +14,113 @@ const MONTHS_FULL = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
+const WEEKDAYS_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+// Helper to format ISO YYYY-MM-DD
+const formatIso = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export const CalendarStrip: React.FC<CalendarStripProps> = ({
   workoutDates,
   selectedDate,
   onSelectDate,
 }) => {
-  // Use today as initial reference
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
-  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState<boolean>(false);
+  const [isMonthExpanded, setIsMonthExpanded] = useState<boolean>(false);
+  // viewDate is used for the expanded month grid
+  const [viewDate, setViewDate] = useState<Date>(() => new Date());
 
-  // Helper to format ISO YYYY-MM-DD
-  const formatIso = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const weekViewRef = useRef<HTMLDivElement>(null);
+  const monthViewRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (isMonthExpanded) {
+        if (monthViewRef.current) {
+          setContainerHeight(monthViewRef.current.offsetHeight);
+        }
+      } else {
+        if (weekViewRef.current) {
+          setContainerHeight(weekViewRef.current.offsetHeight);
+        }
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, [isMonthExpanded, viewDate, anchorDate]);
 
   const todayIso = formatIso(new Date());
 
-  // Compute 7 days centered around anchorDate or start of week
+  // Compute 7 days centered around anchorDate's week (Monday-start)
   const getWeekDays = (base: Date) => {
     const days: Date[] = [];
-    // Start week from Sunday (or 3 days before anchor to center it)
-    const currentDayOfWeek = base.getDay(); // 0 is Sun, 1 is Mon...
-    const sunday = new Date(base);
-    sunday.setDate(base.getDate() - currentDayOfWeek);
-
+    const currentDayOfWeek = base.getDay(); // 0 is Sun, 1 is Mon... 6 is Sat
+    const mondayOffset = (currentDayOfWeek + 6) % 7;
+    const monday = new Date(base);
+    monday.setDate(base.getDate() - mondayOffset);
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sunday);
-      d.setDate(sunday.getDate() + i);
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
       days.push(d);
     }
     return days;
   };
 
   const weekDays = getWeekDays(anchorDate);
-
-  // Month & Year display based on the center of current week
   const centerDay = weekDays[3] || anchorDate;
   const monthName = MONTHS_FULL[centerDay.getMonth()];
   const yearNumber = centerDay.getFullYear();
 
-  // Handlers for week navigation
+  // Build month grid for the expanded view
+  const buildMonthGrid = (vd: Date) => {
+    const year = vd.getFullYear();
+    const month = vd.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0=Sun
+    const leadingDaysCount = (firstDayIndex + 6) % 7; // convert to Mon=0
+
+    const prevMonthDaysCount = new Date(year, month, 0).getDate();
+
+    const cells: Array<{
+      date: Date;
+      dayNumber: number;
+      iso: string;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+      hasWorkout: boolean;
+    }> = [];
+
+    for (let i = leadingDaysCount - 1; i >= 0; i--) {
+      const d = prevMonthDaysCount - i;
+      const dateObj = new Date(year, month - 1, d);
+      cells.push({ date: dateObj, dayNumber: d, iso: formatIso(dateObj), isCurrentMonth: false, isToday: false, hasWorkout: workoutDates.has(formatIso(dateObj)) });
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(year, month, d);
+      const iso = formatIso(dateObj);
+      cells.push({ date: dateObj, dayNumber: d, iso, isCurrentMonth: true, isToday: iso === todayIso, hasWorkout: workoutDates.has(iso) });
+    }
+    const totalDaysSoFar = cells.length;
+    const targetCells = totalDaysSoFar > 35 ? 42 : 35;
+    for (let d = 1; d <= targetCells - totalDaysSoFar; d++) {
+      const dateObj = new Date(year, month + 1, d);
+      cells.push({ date: dateObj, dayNumber: d, iso: formatIso(dateObj), isCurrentMonth: false, isToday: false, hasWorkout: workoutDates.has(formatIso(dateObj)) });
+    }
+    return cells;
+  };
+
+  const monthGridCells = buildMonthGrid(viewDate);
+  const expandedMonthName = MONTHS_FULL[viewDate.getMonth()];
+  const expandedYear = viewDate.getFullYear();
+
+  // Handlers
   const handlePrevWeek = () => {
     const newAnchor = new Date(anchorDate);
     newAnchor.setDate(newAnchor.getDate() - 7);
@@ -71,21 +133,46 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
     setAnchorDate(newAnchor);
   };
 
+  const handlePrevMonth = () => {
+    setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleToggleMonth = () => {
+    if (!isMonthExpanded) {
+      // Sync expanded view to current week's month
+      setViewDate(new Date(centerDay.getFullYear(), centerDay.getMonth(), 1));
+    }
+    setIsMonthExpanded(prev => !prev);
+  };
+
+  const handleSelectInGrid = (iso: string, dateObj: Date) => {
+    if (selectedDate === iso) {
+      onSelectDate(null);
+    } else {
+      onSelectDate(iso);
+    }
+    setAnchorDate(dateObj);
+  };
+
   const handleJumpToToday = () => {
     const today = new Date();
     setAnchorDate(today);
+    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
     onSelectDate(todayIso);
   };
 
   return (
     <div className="calendar-strip-container">
-      {/* 1. Header: Month Year Navigation (Takes full width) */}
+      {/* 1. Header: Month Year Navigation */}
       <div className="month-navigation-row">
         <button
           className="nav-arrow-btn"
-          onClick={handlePrevWeek}
-          aria-label="Previous week"
-          title="Previous week"
+          onClick={isMonthExpanded ? handlePrevMonth : handlePrevWeek}
+          aria-label={isMonthExpanded ? 'Previous month' : 'Previous week'}
         >
           <ChevronLeft size={19} />
         </button>
@@ -93,87 +180,153 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         <button
           type="button"
           className="month-title-btn"
-          onClick={() => setIsCalendarModalOpen(true)}
-          title="Open monthly calendar"
-          aria-label={`Open calendar for ${monthName} ${yearNumber}`}
+          onClick={handleToggleMonth}
+          aria-label={`${isMonthExpanded ? 'Collapse' : 'Expand'} calendar for ${isMonthExpanded ? expandedMonthName : monthName} ${isMonthExpanded ? expandedYear : yearNumber}`}
         >
-          <span className="month-title-text">{monthName} {yearNumber}</span>
-          <ChevronDown size={14} className="month-title-chevron" />
+          <span className="month-title-text">
+            {isMonthExpanded ? `${expandedMonthName} ${expandedYear}` : `${monthName} ${yearNumber}`}
+          </span>
+          <ChevronDown
+            size={14}
+            className={`month-title-chevron ${isMonthExpanded ? 'chevron-open' : ''}`}
+          />
         </button>
 
         <button
           className="nav-arrow-btn"
-          onClick={handleNextWeek}
-          aria-label="Next week"
-          title="Next week"
+          onClick={isMonthExpanded ? handleNextMonth : handleNextWeek}
+          aria-label={isMonthExpanded ? 'Next month' : 'Next week'}
         >
           <ChevronRight size={19} />
         </button>
       </div>
 
-      {/* 2. Horizontal Date Strip (Day Pills) */}
-      <div key={formatIso(anchorDate)} className="days-strip-row">
-        {weekDays.map((d) => {
-          const iso = formatIso(d);
-          const isSelected = selectedDate === iso;
-          const isToday = iso === todayIso;
-          const hasWorkout = workoutDates.has(iso);
-          const dayName = DAYS_SHORT[d.getDay()];
-          const dayNum = d.getDate();
+      {/* 2. Calendar Dates Area (Weekdays + Date Viewport) */}
+      <div className="calendar-dates-section">
+        {/* Permanent Weekday Headers */}
+        <div className="month-weekdays-header">
+          {WEEKDAYS_SHORT.map((day) => (
+            <span key={day} className="month-weekday-label">{day}</span>
+          ))}
+        </div>
 
-          return (
-            <div key={iso} className="day-col-wrapper">
-              <button
-                className={`day-pill ${isSelected ? 'selected' : ''} ${hasWorkout ? 'has-activity' : ''}`}
-                onClick={() => {
-                  // If clicked again when selected, toggle back to All
-                  if (isSelected) {
-                    onSelectDate(null);
-                  } else {
-                    onSelectDate(iso);
-                  }
-                }}
-                title={`${dayName}, ${monthName} ${dayNum}${hasWorkout ? ' · Workout logged' : ''}`}
-              >
-                {isSelected ? (
-                  /* Selected Pill Layout:
-                     Top circular badge with Day Number,
-                     Bottom with Day Name */
-                  <div className="selected-pill-content">
-                    <div className="selected-circle-badge">
-                      <span className="badge-day-number">{dayNum}</span>
+        {/* Smooth Collapsible Viewport */}
+        <div
+          className="calendar-collapsible-viewport"
+          style={{
+            height: containerHeight !== undefined ? `${containerHeight}px` : undefined,
+          }}
+        >
+          <div className="calendar-views-stack">
+            {/* Week View Layer */}
+            <div
+              ref={weekViewRef}
+              className={`calendar-view-layer ${!isMonthExpanded ? 'active' : 'inactive'}`}
+              aria-hidden={isMonthExpanded}
+            >
+              <div key={formatIso(anchorDate)} className="week-dates-grid">
+                {weekDays.map((d) => {
+                  const iso = formatIso(d);
+                  const isSelected = selectedDate === iso;
+                  const hasWorkout = workoutDates.has(iso);
+                  const isToday = iso === todayIso;
+                  const isCurrentMonth = d.getMonth() === centerDay.getMonth();
+                  const dayNum = d.getDate();
+
+                  return (
+                    <div key={iso} className="month-day-col">
+                      <button
+                        type="button"
+                        tabIndex={!isMonthExpanded ? 0 : -1}
+                        className={`month-date-btn
+                          ${isCurrentMonth ? 'current-month' : 'adjacent-month'}
+                          ${isSelected ? 'selected' : ''}
+                          ${isToday && !isSelected ? 'is-today' : ''}
+                          ${hasWorkout ? 'has-workout' : ''}
+                        `}
+                        onClick={() => {
+                          if (isSelected) {
+                            onSelectDate(null);
+                          } else {
+                            onSelectDate(iso);
+                          }
+                        }}
+                        title={`${WEEKDAYS_SHORT[(d.getDay() + 6) % 7]}, ${MONTHS_FULL[d.getMonth()]} ${dayNum}${hasWorkout ? ' · Workout logged' : ''}`}
+                      >
+                        {isSelected ? (
+                          <div className="month-selected-content">
+                            <div className="month-selected-badge">
+                              <span className="month-badge-number">{dayNum}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="month-date-number">{dayNum}</span>
+                        )}
+                      </button>
+
+                      <div className="month-indicator-slot">
+                        {hasWorkout ? (
+                          <span className="month-workout-dot" />
+                        ) : (
+                          <span className="month-dot-spacer" />
+                        )}
+                      </div>
                     </div>
-                    <span className="selected-day-name">{dayName}</span>
-                  </div>
-                ) : (
-                  /* Normal Pill Layout:
-                     Top: Day Name
-                     Bottom: Day Number */
-                  <div className="normal-pill-content">
-                    <span className="normal-day-name">{dayName}</span>
-                    <span className="normal-day-number">{dayNum}</span>
-                  </div>
-                )}
-              </button>
-
-              {/* Workout Indicator Dot shifted just below the oval container */}
-              <div className="day-indicator-slot">
-                {hasWorkout ? (
-                  <span className="workout-indicator-dot" />
-                ) : (
-                  <span className="empty-dot-spacer" />
-                )}
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
+
+            {/* Expanded Month View Layer */}
+            <div
+              ref={monthViewRef}
+              className={`calendar-view-layer ${isMonthExpanded ? 'active' : 'inactive'}`}
+              aria-hidden={!isMonthExpanded}
+            >
+              <div key={`${viewDate.getFullYear()}-${viewDate.getMonth()}`} className="month-dates-grid">
+                {monthGridCells.map((cell) => (
+                  <div key={cell.iso} className="month-day-col">
+                    <button
+                      type="button"
+                      tabIndex={isMonthExpanded ? 0 : -1}
+                      className={`month-date-btn
+                        ${cell.isCurrentMonth ? 'current-month' : 'adjacent-month'}
+                        ${selectedDate === cell.iso ? 'selected' : ''}
+                        ${cell.isToday && selectedDate !== cell.iso ? 'is-today' : ''}
+                        ${cell.hasWorkout ? 'has-workout' : ''}
+                      `}
+                      onClick={() => handleSelectInGrid(cell.iso, cell.date)}
+                      title={`${cell.iso}${cell.hasWorkout ? ' · Workout logged' : ''}`}
+                    >
+                      {selectedDate === cell.iso ? (
+                        <div className="month-selected-content">
+                          <div className="month-selected-badge">
+                            <span className="month-badge-number">{cell.dayNumber}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="month-date-number">{cell.dayNumber}</span>
+                      )}
+                    </button>
+                    <div className="month-indicator-slot">
+                      {cell.hasWorkout
+                        ? <span className="month-workout-dot" />
+                        : <span className="month-dot-spacer" />
+                      }
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 3. Filter Action Pills (Shifted below Dates Container) */}
+      {/* 3. Filter Action Pills */}
       <div className="filter-actions-row">
         <button
           className={`action-filter-pill ${selectedDate === null ? 'active' : ''}`}
-          onClick={() => onSelectDate(null)}
+          onClick={() => { onSelectDate(null); }}
           title="Show all workouts"
         >
           <span>All</span>
@@ -188,21 +341,6 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         </button>
       </div>
 
-      {/* 4. Full Monthly Calendar Modal (Opened on Month Name Tap) */}
-      <MonthCalendarModal
-        isOpen={isCalendarModalOpen}
-        onClose={() => setIsCalendarModalOpen(false)}
-        currentDate={centerDay}
-        selectedDate={selectedDate}
-        workoutDates={workoutDates}
-        onSelectDate={(iso, dateObj) => {
-          onSelectDate(iso);
-          if (dateObj) {
-            setAnchorDate(dateObj);
-          }
-        }}
-      />
-
       <style jsx>{`
         .calendar-strip-container {
           display: flex;
@@ -211,7 +349,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           margin-bottom: 24px;
         }
 
-        /* 1. Month Navigation Row (Takes full space) */
+        /* 1. Month Navigation Row */
         .month-navigation-row {
           display: flex;
           align-items: center;
@@ -245,10 +383,10 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         }
 
         .month-title-btn {
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: transparent;
+          border: none;
           border-radius: 9999px;
-          padding: 6px 14px;
+          padding: 6px 8px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -259,8 +397,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         }
 
         .month-title-btn:hover {
-          background: rgba(255, 255, 255, 0.09);
-          border-color: rgba(255, 255, 255, 0.16);
+          background: transparent;
           color: #ffffff;
           transform: translateY(-1px);
         }
@@ -279,14 +416,19 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
 
         .month-title-chevron {
           color: rgba(255, 255, 255, 0.5);
-          transition: transform 0.2s ease, color 0.2s ease;
+          transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+        }
+
+        .month-title-chevron.chevron-open {
+          transform: rotate(180deg);
+          color: #ffffff;
         }
 
         .month-title-btn:hover .month-title-chevron {
           color: #ffffff;
         }
 
-        /* 2. Filter Actions Row (Shifted below Month) */
+        /* 2. Filter Actions Row */
         .filter-actions-row {
           display: flex;
           align-items: center;
@@ -323,219 +465,197 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           background: #c8c8cc;
           color: #08080a;
           border-color: #e4e4e7;
-          box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+          box-shadow: none;
         }
 
-        /* 3. Day Pills Row */
-        @keyframes stripFadeSlide {
-          from {
-            opacity: 0.45;
-            transform: translateY(4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        /* 3. Smooth Collapsible Viewport & View Layers */
+        .calendar-collapsible-viewport {
+          position: relative;
+          overflow: hidden;
+          width: 100%;
+          transition: height 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: height;
         }
 
-        .days-strip-row {
+        .calendar-views-stack {
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr;
+          width: 100%;
+          align-items: start;
+        }
+
+        .calendar-view-layer {
+          grid-area: 1 / 1;
+          width: 100%;
+          will-change: opacity, transform;
+        }
+
+        .calendar-view-layer.active {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          pointer-events: auto;
+          visibility: visible;
+          transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .calendar-view-layer.inactive {
+          opacity: 0;
+          transform: translateY(-8px) scale(0.97);
+          pointer-events: none;
+          visibility: hidden;
+          transition: opacity 0.22s ease,
+                      transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                      visibility 0s 0.25s;
+        }
+
+        .calendar-dates-section {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          width: 100%;
+        }
+
+        .month-weekdays-header {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 8px;
-          width: 100%;
-          animation: stripFadeSlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          text-align: center;
+          padding: 0 2px;
+          margin: 0;
         }
 
-        .day-col-wrapper {
+        .month-weekday-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          color: rgba(255, 255, 255, 0.38);
+          text-transform: uppercase;
+          text-align: center;
+        }
+
+        .week-dates-grid,
+        .month-dates-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          row-gap: 6px;
+          column-gap: 4px;
+        }
+
+        .month-day-col {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 5px;
-          width: 100%;
+          gap: 4px;
         }
 
-        .day-pill {
+        .month-date-btn {
           position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           width: 100%;
-          height: 64px;
+          aspect-ratio: 1;
           border-radius: 9999px;
           background: rgba(22, 22, 28, 0.75);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255, 255, 255, 0.09);
+          color: #e4e4e7;
+          font-family: var(--font-display);
+          font-size: 0.85rem;
+          font-weight: 700;
           cursor: pointer;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                      background 0.35s ease,
-                      border-color 0.35s ease,
-                      box-shadow 0.35s ease;
-          padding: 2.5px;
+          transition: background 0.25s ease,
+                      border-color 0.25s ease,
+                      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          padding: 0;
           box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.5);
-          user-select: none;
         }
 
-        .day-pill:hover {
+        .month-date-btn:hover {
           background: rgba(30, 30, 38, 0.85);
           border-color: rgba(255, 255, 255, 0.18);
           transform: translateY(-1px);
         }
 
-        .day-pill:active {
+        .month-date-btn:active {
           transform: scale(0.92);
-          transition: transform 0.08s ease;
         }
 
-        /* Normal (Unselected) State */
-        @keyframes normalFadeIn {
-          0% {
-            opacity: 0;
-            transform: scale(0.92);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .normal-pill-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          width: 100%;
-          height: 100%;
-          padding: 2px;
-          animation: normalFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .normal-day-name {
-          font-size: 0.7rem;
-          color: var(--text-secondary, #9a9aa2);
+        .month-date-btn.adjacent-month {
+          background: rgba(22, 22, 28, 0.35);
+          border-color: rgba(255, 255, 255, 0.04);
+          color: rgba(255, 255, 255, 0.22);
           font-weight: 500;
-          letter-spacing: -0.01em;
-          line-height: 1;
         }
 
-        .normal-day-number {
-          font-family: var(--font-display);
-          font-size: 1.02rem;
-          font-weight: 700;
-          color: #e4e4e7;
-          line-height: 1;
+        .month-date-btn.is-today:not(.selected) {
+          border-color: rgba(255, 255, 255, 0.32);
         }
 
-        /* Indicator Slot below the oval container */
-        .day-indicator-slot {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 5px;
-          width: 100%;
-        }
-
-        @keyframes dotGlowPulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 6px rgba(52, 211, 153, 0.75);
-          }
-          50% {
-            transform: scale(1.18);
-            box-shadow: 0 0 10px rgba(52, 211, 153, 0.95);
-          }
-        }
-
-        .workout-indicator-dot {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: #34d399; /* Mint teal workout indicator */
-          box-shadow: 0 0 6px rgba(52, 211, 153, 0.75);
-          animation: dotGlowPulse 2.8s ease-in-out infinite;
-        }
-
-        .empty-dot-spacer {
-          width: 5px;
-          height: 5px;
-          visibility: hidden;
-        }
-
-        /* Selected State (Spring Pop Animation on Selection Switch) */
-        .day-pill.selected {
+        .month-date-btn.selected {
           background: rgba(28, 28, 34, 0.95);
           border-color: rgba(255, 255, 255, 0.14);
-          box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7);
           transform: translateY(-1px);
         }
 
-        .selected-pill-content {
+        .month-selected-content {
           display: flex;
-          flex-direction: column;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           width: 100%;
           height: 100%;
-          padding: 0 0 4px;
+          padding: 4px;
         }
 
-        @keyframes badgePopIn {
-          0% {
-            transform: scale(0.65);
-            opacity: 0;
-          }
-          60% {
-            transform: scale(1.06);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-
-        .selected-circle-badge {
+        .month-selected-badge {
           width: 100%;
           aspect-ratio: 1;
           border-radius: 50%;
           background: #e4e4e7;
           color: #08080a;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-          position: relative;
-          animation: badgePopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: badgePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        .badge-day-number {
+        .month-badge-number {
           font-family: var(--font-display);
-          font-size: 1.02rem;
+          font-size: 0.82rem;
           font-weight: 800;
           line-height: 1;
         }
 
-        @keyframes dayLabelIn {
-          0% {
-            opacity: 0;
-            transform: translateY(3px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        .month-date-number {
+          font-family: var(--font-display);
+          font-size: 0.85rem;
+          font-weight: 700;
+          line-height: 1;
         }
 
-        .selected-day-name {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: #e4e4e7;
-          letter-spacing: -0.01em;
-          margin-bottom: 1px;
-          animation: dayLabelIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .month-indicator-slot {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 5px;
+          width: 100%;
+        }
+
+        .month-workout-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 5px rgba(52, 211, 153, 0.7);
+        }
+
+        .month-dot-spacer {
+          width: 4px;
+          height: 4px;
+          visibility: hidden;
         }
       `}</style>
     </div>

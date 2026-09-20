@@ -509,7 +509,7 @@ export const MonthCalendarModal: React.FC<MonthCalendarModalProps> = ({
           background: #c8c8cc;
           color: #08080a;
           border-color: #e4e4e7;
-          box-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+          box-shadow: none;
         }
 
         .cal-today-pill {
