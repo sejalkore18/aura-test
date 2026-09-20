@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
+import { MonthCalendarModal } from '@/components/MonthCalendarModal';
 
 interface CalendarStripProps {
   workoutDates: Set<string>; // ISO strings: 'YYYY-MM-DD'
@@ -22,6 +23,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
 }) => {
   // Use today as initial reference
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState<boolean>(false);
 
   // Helper to format ISO YYYY-MM-DD
   const formatIso = (date: Date): string => {
@@ -88,9 +90,16 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           <ChevronLeft size={19} />
         </button>
 
-        <span className="month-title">
-          {monthName} {yearNumber}
-        </span>
+        <button
+          type="button"
+          className="month-title-btn"
+          onClick={() => setIsCalendarModalOpen(true)}
+          title="Open monthly calendar"
+          aria-label={`Open calendar for ${monthName} ${yearNumber}`}
+        >
+          <span className="month-title-text">{monthName} {yearNumber}</span>
+          <ChevronDown size={14} className="month-title-chevron" />
+        </button>
 
         <button
           className="nav-arrow-btn"
@@ -179,6 +188,21 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         </button>
       </div>
 
+      {/* 4. Full Monthly Calendar Modal (Opened on Month Name Tap) */}
+      <MonthCalendarModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        currentDate={centerDay}
+        selectedDate={selectedDate}
+        workoutDates={workoutDates}
+        onSelectDate={(iso, dateObj) => {
+          onSelectDate(iso);
+          if (dateObj) {
+            setAnchorDate(dateObj);
+          }
+        }}
+      />
+
       <style jsx>{`
         .calendar-strip-container {
           display: flex;
@@ -220,15 +244,46 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           opacity: 0.7;
         }
 
-        .month-title {
-          font-family: var(--font-display);
-          font-size: 0.95rem;
-          font-weight: 700;
+        .month-title-btn {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 9999px;
+          padding: 6px 14px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
           color: #e4e4e7;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .month-title-btn:hover {
+          background: rgba(255, 255, 255, 0.09);
+          border-color: rgba(255, 255, 255, 0.16);
+          color: #ffffff;
+          transform: translateY(-1px);
+        }
+
+        .month-title-btn:active {
+          transform: scale(0.96);
+        }
+
+        .month-title-text {
+          font-family: var(--font-display);
+          font-size: 0.94rem;
+          font-weight: 700;
           letter-spacing: -0.01em;
           white-space: nowrap;
-          text-align: center;
-          flex: 1;
+        }
+
+        .month-title-chevron {
+          color: rgba(255, 255, 255, 0.5);
+          transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .month-title-btn:hover .month-title-chevron {
+          color: #ffffff;
         }
 
         /* 2. Filter Actions Row (Shifted below Month) */

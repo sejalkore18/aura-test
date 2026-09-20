@@ -15,3 +15,8 @@ When requested to change designs, layouts, or styles for a specific page, screen
 1. **Strict Component Isolation**: Touch and modify ONLY the components, subcomponents, and styles directly belonging to the specified screen or view.
 2. **Preserve Unrelated Screens**: Do NOT touch, modify, refactor, or restyle any other components or views that are not directly related to that particular screen.
 3. **No Unintended Collateral Changes**: Avoid making broad or shared changes that alter the appearance or behavior of other screens unless explicitly instructed by the user.
+
+# Verification & Testing Policy
+
+- **No Automated Browser Testing**: Do NOT launch browser subagents (`browser_subagent`) or perform automated browser interactions after code changes unless the user explicitly requests browser verification in their prompt.
+- **Standard Verification**: Verify implementations using TypeScript compilation and build checks (`bun run build` / `tsc -b`) instead.

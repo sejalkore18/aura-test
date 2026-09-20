@@ -4,7 +4,95 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { ArrowRight, Play, Activity } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
-import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
+import { getExerciseById, EXERCISE_LIBRARY, DEFAULT_ROUTINES } from '@/data/exercises';
+
+// Helper to simplify targeted muscles into clean, friendly lowercase terms matching design
+const formatMusclesForDisplay = (ex?: Exercise, fallbackName?: string): string => {
+  if (ex) {
+    const rawList = [...(ex.primaryMuscles || []), ...(ex.secondaryMuscles || [])];
+    const cleanList: string[] = [];
+
+    rawList.forEach((m) => {
+      const s = m.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+      let friendly = s;
+      if (s.includes('pectoralis') || s.includes('chest')) friendly = 'chest';
+      else if (s.includes('deltoid') || s.includes('shoulder')) friendly = 'shoulders';
+      else if (s.includes('tricep')) friendly = 'triceps';
+      else if (s.includes('bicep')) friendly = 'biceps';
+      else if (s.includes('quad')) friendly = 'thighs';
+      else if (s.includes('glute')) friendly = 'glutes';
+      else if (s.includes('hamstring')) friendly = 'hamstrings';
+      else if (s.includes('gastrocnemius') || s.includes('soleus') || s.includes('calf')) friendly = 'calves';
+      else if (s.includes('latissimus') || s.includes('lats') || s.includes('back')) friendly = 'lats';
+      else if (s.includes('trapezius') || s.includes('traps')) friendly = 'traps';
+      else if (s.includes('core') || s.includes('abdom') || s.includes('abs')) friendly = 'core';
+      else if (s.includes('leg')) friendly = 'legs';
+
+      if (!cleanList.includes(friendly)) {
+        cleanList.push(friendly);
+      }
+    });
+
+    if (cleanList.length > 0) {
+      return cleanList.slice(0, 3).join(', ');
+    }
+
+    if (ex.category) {
+      return ex.category;
+    }
+  }
+
+  const lower = (fallbackName || '').toLowerCase();
+  if (lower.includes('push-up') || lower.includes('press') || lower.includes('bench')) {
+    return 'biceps, triceps, shoulders';
+  }
+  if (lower.includes('squat')) {
+    return 'calves, legs, thighs';
+  }
+  if (lower.includes('lunge')) {
+    return 'calves, hamstrings, glutes';
+  }
+  if (lower.includes('pull-up') || lower.includes('row') || lower.includes('deadlift')) {
+    return 'back, lats, biceps';
+  }
+  if (lower.includes('dip')) {
+    return 'triceps, shoulders, chest';
+  }
+  if (lower.includes('curl')) {
+    return 'biceps, forearms';
+  }
+
+  return 'full body, core';
+};
+
+const findExerciseByNameOrId = (nameOrId: string): Exercise | undefined => {
+  const norm = nameOrId.toLowerCase().trim();
+  let found = EXERCISE_LIBRARY.find((e) => e.id.toLowerCase() === norm);
+  if (found) return found;
+
+  found = EXERCISE_LIBRARY.find((e) => e.name.toLowerCase() === norm);
+  if (found) return found;
+
+  const slug = norm.replace(/\s+/g, '-');
+  found = EXERCISE_LIBRARY.find((e) => e.id.toLowerCase() === slug);
+  if (found) return found;
+
+  found = EXERCISE_LIBRARY.find(
+    (e) => e.name.toLowerCase().includes(norm) || norm.includes(e.name.toLowerCase())
+  );
+  return found;
+};
+
+const ACCENT_COLORS = [
+  '#ea580c', // Muted warm terracotta / orange
+  '#0d9488', // Sage teal / cyan
+  '#6366f1', // Slate indigo / purple
+  '#ec4899', // Crimson rose
+  '#3b82f6', // Electric blue
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#8b5cf6', // Violet
+];
 
 interface DashboardViewProps {
   activeUser: UserProfile;
@@ -71,50 +159,131 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Filter logs for active athlete
   const userLogs = workoutLogs.filter((log) => log.userId === activeUser.id);
-  const totalBurnedCalories = userLogs.reduce(
-    (acc, log) => acc + log.durationMinutes * 9,
-    1350
-  );
 
-  // Check for any activity completed today
-  const todayDateStr = new Date().toLocaleDateString('en-US', {
+  // Robust check for workouts completed today
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayDateStr = now.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
-  const todayLogs = userLogs.filter((log) => log.date === todayDateStr);
-  const hasActivityToday = completedExerciseIds.length > 0 || todayLogs.length > 0;
 
-  // Today's Activity exercises mapped to visual cards with toned-down, sophisticated accents
-  const activityItems = [
-    {
-      id: 'push-ups',
-      name: 'Push-ups',
-      muscles: 'biceps, triceps, shoulders',
-      reps: 15,
-      sets: 3,
-      accentColor: 'rgba(234, 88, 12, 0.65)', // Muted warm terracotta
-      routineIndex: 0,
-    },
-    {
-      id: 'barbell-squat',
-      name: 'Squads',
-      muscles: 'calves, legs, thighs',
-      reps: 25,
-      sets: 3,
-      accentColor: 'rgba(20, 184, 166, 0.65)', // Muted sage teal
-      routineIndex: 1,
-    },
-    {
-      id: 'dumbbell-lunge',
-      name: 'Lunges',
-      muscles: 'calves, hamstrings, glutes',
-      reps: 15,
-      sets: 3,
-      accentColor: 'rgba(99, 102, 241, 0.65)', // Muted slate indigo
-      routineIndex: 2,
-    },
-  ];
+  const todayLogs = userLogs.filter((log) => {
+    if (log.isoDate && log.isoDate === todayIso) return true;
+    if (log.date === todayDateStr) return true;
+    if (log.date) {
+      const parsed = new Date(log.date);
+      if (!isNaN(parsed.getTime())) {
+        return (
+          parsed.getFullYear() === now.getFullYear() &&
+          parsed.getMonth() === now.getMonth() &&
+          parsed.getDate() === now.getDate()
+        );
+      }
+    }
+    return false;
+  });
+
+  // Dynamic activity items and calories calculation for workout done today
+  interface TodayActivityExercise {
+    id: string;
+    name: string;
+    muscles: string;
+    reps: number;
+    sets: number;
+    accentColor: string;
+    matchedEx?: Exercise;
+  }
+
+  const dynamicActivityItems: TodayActivityExercise[] = [];
+  let todayCaloriesBurned = 0;
+
+  if (todayLogs.length > 0) {
+    // 1. From completed workout(s) logged today
+    todayLogs.forEach((log) => {
+      // Calculate realistic calories burned for this completed workout
+      const matchedRoutine = [currentRoutine, ...DEFAULT_ROUTINES].find(
+        (r) => r.id === log.routineId || r.title?.toLowerCase() === log.routineTitle?.toLowerCase()
+      );
+      if (matchedRoutine?.estimatedCalories) {
+        todayCaloriesBurned += matchedRoutine.estimatedCalories;
+      } else {
+        const dur = log.durationMinutes || 25;
+        const reps = log.totalReps || 45;
+        todayCaloriesBurned += Math.round(dur * 8.5 + reps * 0.4);
+      }
+
+      // Collect all completed exercises with actual sets & reps
+      (log.completedExercises || []).forEach((ce, idx) => {
+        const matchedEx = findExerciseByNameOrId(ce.name);
+        const setsCount = ce.sets?.length || 1;
+        const avgReps =
+          setsCount > 0
+            ? Math.round(ce.sets.reduce((sum, s) => sum + (s.reps || 0), 0) / setsCount)
+            : 10;
+        const muscles = formatMusclesForDisplay(matchedEx, ce.name);
+        const colorIdx = dynamicActivityItems.length % ACCENT_COLORS.length;
+
+        dynamicActivityItems.push({
+          id: matchedEx?.id || `today-ce-${idx}`,
+          name: ce.name,
+          muscles,
+          reps: avgReps,
+          sets: setsCount,
+          accentColor: ACCENT_COLORS[colorIdx],
+          matchedEx,
+        });
+      });
+    });
+  } else if (completedExerciseIds.length > 0) {
+    // 2. From active workout session completed exercises today
+    currentRoutine.exercises
+      .filter((e) => completedExerciseIds.includes(e.exerciseId))
+      .forEach((rEx, idx) => {
+        const matchedEx = getExerciseById(rEx.exerciseId) || findExerciseByNameOrId(rEx.exerciseId);
+        const exName = matchedEx?.name || rEx.exerciseId;
+        const completedSets = rEx.sets?.filter((s) => s.completed) || [];
+        const setsCount = completedSets.length > 0 ? completedSets.length : rEx.targetSets || 3;
+        const reps =
+          completedSets.length > 0
+            ? Math.round(
+                completedSets.reduce(
+                  (sum, s) => sum + (s.actualReps || s.targetReps),
+                  0
+                ) / completedSets.length
+              )
+            : rEx.targetReps || matchedEx?.defaultReps || 10;
+        const muscles = formatMusclesForDisplay(matchedEx, exName);
+        const colorIdx = idx % ACCENT_COLORS.length;
+
+        dynamicActivityItems.push({
+          id: rEx.exerciseId,
+          name: exName,
+          muscles,
+          reps,
+          sets: setsCount,
+          accentColor: ACCENT_COLORS[colorIdx],
+          matchedEx,
+        });
+      });
+
+    const totalRoutineEx = currentRoutine.exercises?.length || 1;
+    const baseRoutineCal = currentRoutine.estimatedCalories || 280;
+    todayCaloriesBurned = Math.round(
+      (completedExerciseIds.length / totalRoutineEx) * baseRoutineCal
+    );
+  }
+
+  const hasActivityToday = dynamicActivityItems.length > 0 || todayLogs.length > 0;
+
+  // Format calories nicely (e.g. 380, or 1.350 / 1,350 if >= 1000)
+  const formattedCalories =
+    todayCaloriesBurned >= 1000
+      ? (todayCaloriesBurned / 1000).toFixed(3)
+      : todayCaloriesBurned > 0
+      ? String(todayCaloriesBurned)
+      : '0';
 
   // Helper for circular SVG progress rings with mathematically centered percentage text
   const renderProgressRing = (
@@ -313,7 +482,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               {/* Middle: Calorie Value & Subtitle */}
               <div className="calorie-meta-group">
-                <span className="calorie-number">1.350</span>
+                <span className="calorie-number">{formattedCalories}</span>
                 <span className="calorie-unit-label">Calories</span>
               </div>
 
@@ -338,17 +507,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             {/* Bottom: Exercise Breakdown List (Dark Mode) */}
             <div className="exercises-list-column">
-              {activityItems.map((item, index) => {
+              {dynamicActivityItems.map((item, index) => {
                 const matchedEx =
+                  item.matchedEx ||
                   getExerciseById(item.id) ||
-                  EXERCISE_LIBRARY.find((e) =>
-                    e.name.toLowerCase().includes(item.name.toLowerCase())
-                  ) ||
-                  EXERCISE_LIBRARY[index % EXERCISE_LIBRARY.length];
+                  findExerciseByNameOrId(item.name);
 
                 return (
                   <div
-                    key={item.id}
+                    key={`${item.id}-${index}`}
                     className="activity-exercise-row"
                     onClick={() => {
                       if (matchedEx) {
@@ -387,8 +554,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Activity size={28} strokeWidth={2.2} className="no-activity-icon" />
             </div>
             <div className="no-activity-text-content">
-              <h3 className="no-activity-title">No activity today</h3>
+              <h3 className="no-activity-title">No workout completed today</h3>
+              <p className="no-activity-subtitle">Complete today&apos;s routine to track your activity and calories</p>
             </div>
+            <button className="no-activity-start-btn" onClick={onStartWorkout}>
+              Start Workout
+            </button>
           </div>
         )}
       </section>
