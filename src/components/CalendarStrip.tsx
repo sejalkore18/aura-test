@@ -300,10 +300,15 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
       const dx = e.touches[0].clientX - touchStartX;
       const dy = e.touches[0].clientY - touchStartY;
 
+      // Prevent PWA pull-to-refresh reload immediately when pulling down over calendar
+      if (dy > 0 && e.cancelable) {
+        e.preventDefault();
+      }
+
       if (!isTouchSwipingH && !isTouchSwipingV) {
-        if (Math.abs(dx) >= 6) {
+        if (Math.abs(dx) >= 6 && Math.abs(dx) > Math.abs(dy)) {
           isTouchSwipingH = true;
-        } else if (Math.abs(dy) >= 18 && Math.abs(dx) < 6) {
+        } else if (Math.abs(dy) >= 6) {
           if ((dy > 0 && !isMonthExpandedRef.current) || (dy < 0 && isMonthExpandedRef.current)) {
             isTouchSwipingV = true;
           }
@@ -340,8 +345,8 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
             handlePrevWeekRef.current();
           }
         }
-      } else if (isTouchSwipingV) {
-        const threshold = 25;
+      } else if (isTouchSwipingV || Math.abs(touchDeltaY) >= 20) {
+        const threshold = 20;
         if (touchDeltaY > threshold && !isMonthExpandedRef.current) {
           handleExpandMonthRef.current();
         } else if (touchDeltaY < -threshold && isMonthExpandedRef.current) {
@@ -627,6 +632,8 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           flex-direction: column;
           gap: 20px;
           margin-bottom: 24px;
+          overscroll-behavior-y: none;
+          touch-action: pan-x;
         }
 
         /* 1. Month Navigation Row */
@@ -783,7 +790,8 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           flex-direction: column;
           gap: 6px;
           width: 100%;
-          touch-action: pan-y;
+          touch-action: pan-x;
+          overscroll-behavior-y: none;
           user-select: none;
           -webkit-user-select: none;
         }

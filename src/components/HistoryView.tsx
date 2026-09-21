@@ -405,6 +405,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           min-height: 100%;
           font-family: var(--font-body);
           overflow-y: auto;
+          overscroll-behavior-y: contain;
           scrollbar-width: none;
           -ms-overflow-style: none;
         }

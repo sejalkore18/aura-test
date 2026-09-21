@@ -50,6 +50,7 @@ html, body {
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
