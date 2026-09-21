@@ -7,15 +7,17 @@ export const metadata: Metadata = {
   description: 'Smart gym workout tracker inspired by FitnessAI with real exercise looping videos, sets, reps, weight logs, and rest timers.',
   keywords: ['fitness tracker', 'gym workout', 'sets and reps', 'chest press', 'push day', 'workout routine'],
   authors: [{ name: 'Aura Fitness' }],
+  manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/logo-cosmic.png', type: 'image/png' },
+      { url: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/pwa-icon-512.png', sizes: '512x512', type: 'image/png' },
       { url: '/favicon.ico' },
     ],
     apple: [
-      { url: '/logo-cosmic.png', type: 'image/png' },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/logo-cosmic.png',
+    shortcut: '/pwa-icon-192.png',
   },
 };
 
@@ -35,9 +37,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" type="image/png" href="/logo-cosmic.png" />
-        <link rel="apple-touch-icon" href="/logo-cosmic.png" />
-        <link rel="shortcut icon" href="/logo-cosmic.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon-512.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="shortcut icon" href="/pwa-icon-192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://app.fitnessai.com" crossOrigin="anonymous" />
