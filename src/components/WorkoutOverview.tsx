@@ -134,16 +134,6 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
   return (
     <div className="templates-view animate-fade-in">
-      {/* Top Action Bar */}
-      {allRoutines.length > 0 && (
-        <div className="top-action-bar">
-          <button className="aux-btn-primary" onClick={onOpenCreateTemplate}>
-            <Plus size={16} />
-            <span>New Workout</span>
-          </button>
-        </div>
-      )}
-
       {/* Templates List */}
       <div className="templates-list-container">
         {allRoutines.length === 0 ? (
@@ -301,6 +291,21 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Floating Action Button — Circular White + */}
+      {allRoutines.length > 0 && (
+        <div className="fab-anchor">
+          <button
+            id="fab-new-workout"
+            className="fab-circular-white"
+            onClick={onOpenCreateTemplate}
+            aria-label="New Workout"
+            title="New Workout"
+          >
+            <Plus size={24} strokeWidth={2.6} color="#000000" />
+          </button>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal Dialog Portaled to App Container for Dead-Center Alignment */}
       {routineToDelete && portalTarget && createPortal(
@@ -954,33 +959,62 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           transform: scale(1.12);
         }
 
-        /* Top Action Bar */
-        .top-action-bar {
-          margin-bottom: 16px;
+        /* Floating Action Button Anchor & Circular White Button */
+        .fab-anchor {
+          position: sticky;
+          bottom: 28px;
+          z-index: 50;
+          display: flex;
+          justify-content: flex-end;
+          pointer-events: none;
+          margin-top: auto;
+          padding-top: 12px;
+          padding-right: 8px;
         }
 
-        .aux-btn-primary {
-          width: 100%;
+        .fab-circular-white {
+          pointer-events: auto;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          padding: 13px 20px;
-          background: rgba(59, 130, 246, 0.12);
-          border: 1px solid rgba(59, 130, 246, 0.35);
-          border-radius: 9999px;
-          color: #60a5fa;
-          font-size: 13.5px;
-          font-weight: 700;
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: #f8fafc;
+          border: none;
+          color: #000000;
           cursor: pointer;
-          transition: all 0.2s ease;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
+          transition:
+            transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.2s ease,
+            background-color 0.15s ease;
+          animation: fabBounceIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
 
-        .aux-btn-primary:hover {
-          background: rgba(59, 130, 246, 0.22);
-          border-color: rgba(59, 130, 246, 0.5);
-          color: #93c5fd;
-          transform: translateY(-1px);
+        .fab-circular-white:hover {
+          transform: translateY(-2px) scale(1.06);
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+          background: #f8fafc;
+        }
+
+        .fab-circular-white:active {
+          transform: scale(0.94);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes fabBounceIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.5) translateY(12px);
+          }
+          70% {
+            opacity: 1;
+            transform: scale(1.06) translateY(-2px);
+          }
+          100% {
+            transform: scale(1) translateY(0);
+          }
         }
 
         /* Delete Confirmation Modal */
