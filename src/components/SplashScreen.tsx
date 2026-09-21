@@ -64,7 +64,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       role="status"
       aria-label="Loading Aura"
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
         zIndex: 9999,
         backgroundColor: '#08080a',
@@ -111,7 +111,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
       <style jsx>{`
         .splash-backdrop {
-          position: absolute;
+          position: fixed;
           inset: 0;
           z-index: 9999;
           background-color: #08080a;
