@@ -13,26 +13,29 @@ interface HistoryViewProps {
   onGoToWorkouts: () => void;
 }
 
-// Toned-down, sophisticated accent colors from DashboardView
+// Accent colors harmonized with DashboardView (Orange, Green, Violet)
+const DASHBOARD_ACCENTS = {
+  orange: '#ea580c', // Muted warm terracotta / orange from dashboard
+  green: '#10b981',  // Emerald green from dashboard
+  violet: '#8b5cf6', // Violet from dashboard
+};
+
 const getRoutineAccent = (title: string): string => {
   const lower = title.toLowerCase();
-  if (lower.includes('chest') || lower.includes('push') || lower.includes('hiit')) {
-    return 'rgba(234, 88, 12, 0.65)'; // Muted warm terracotta (from dashboard)
+  if (lower.includes('chest') || lower.includes('push') || lower.includes('hiit') || lower.includes('leg') || lower.includes('squat') || lower.includes('lower')) {
+    return DASHBOARD_ACCENTS.orange;
   }
-  if (lower.includes('dip') || lower.includes('machine') || lower.includes('arm') || lower.includes('upper')) {
-    return 'rgba(20, 184, 166, 0.65)'; // Muted sage teal (from dashboard)
+  if (lower.includes('dip') || lower.includes('machine') || lower.includes('arm') || lower.includes('upper') || lower.includes('back')) {
+    return DASHBOARD_ACCENTS.green;
   }
-  if (lower.includes('leg') || lower.includes('squat') || lower.includes('lower')) {
-    return 'rgba(234, 88, 12, 0.65)'; // Muted warm terracotta (from dashboard)
-  }
-  return 'rgba(99, 102, 241, 0.65)'; // Muted slate indigo (from dashboard)
+  return DASHBOARD_ACCENTS.violet;
 };
 
 const getChipDotColor = (idx: number): string => {
   const colors = [
-    'rgba(234, 88, 12, 0.65)',
-    'rgba(20, 184, 166, 0.65)',
-    'rgba(99, 102, 241, 0.65)',
+    DASHBOARD_ACCENTS.orange,
+    DASHBOARD_ACCENTS.green,
+    DASHBOARD_ACCENTS.violet,
   ];
   return colors[idx % colors.length];
 };
@@ -455,11 +458,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         }
 
         .dot-teal {
-          background: rgba(20, 184, 166, 0.65);
+          background: #10b981;
         }
 
         .dot-terracotta {
-          background: rgba(234, 88, 12, 0.65);
+          background: #ea580c;
         }
 
         .stat-number {
