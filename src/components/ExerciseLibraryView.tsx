@@ -113,6 +113,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           flex: 1;
           padding: 22px 20px 24px;
           color: #e4e4e7;
+          background-color: var(--bg-primary, #08080a);
         }
 
 
@@ -191,14 +192,14 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           gap: 14px;
           padding: 8px 12px 8px 8px;
           border-radius: 18px;
-          background: rgba(20, 20, 24, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: rgba(22, 22, 28, 0.75);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .exercise-card:hover {
-          background: rgba(30, 30, 36, 0.85);
+          background: rgba(30, 30, 38, 0.85);
           border-color: rgba(255, 255, 255, 0.12);
           transform: translateY(-1px);
         }
