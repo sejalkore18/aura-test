@@ -74,19 +74,12 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         justifyContent: 'center',
       }}
     >
-      {/* Cosmic aurora ambient glow orbs */}
-      <div className="ambient-glow cyan-glow" />
-      <div className="ambient-glow violet-glow" />
-      <div className="ambient-glow deep-glow" />
-
       {/* Center brand presentation */}
       <div className="splash-center">
         {/* Aura Logo Emblem */}
         <div className="emblem-wrapper">
           <div className="emblem-ring ring-outer" />
           <div className="emblem-ring ring-inner" />
-          <div className="emblem-card">
-            <div className="logo-glow-underlay" />
             <Image
               src="/logo-cosmic.png"
               alt="Aura Logo"
@@ -95,7 +88,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
               priority
               className="splash-logo-img"
             />
-          </div>
         </div>
 
         {/* Wordmark and Tagline */}
@@ -144,45 +136,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           transform: scale(1.03);
           filter: blur(4px);
           pointer-events: none;
-        }
-
-        /* Ambient cosmic aurora glows */
-        .ambient-glow {
-          position: absolute;
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        .cyan-glow {
-          width: 320px;
-          height: 320px;
-          background: radial-gradient(circle, rgba(0, 210, 255, 0.22) 0%, rgba(56, 189, 248, 0.08) 45%, transparent 70%);
-          top: 32%;
-          left: 54%;
-          transform: translate(-50%, -50%);
-          filter: blur(60px);
-          animation: floatGlowOne 4s ease-in-out infinite alternate;
-        }
-
-        .violet-glow {
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(217, 70, 239, 0.08) 45%, transparent 75%);
-          top: 42%;
-          left: 44%;
-          transform: translate(-50%, -50%);
-          filter: blur(65px);
-          animation: floatGlowTwo 4.5s ease-in-out infinite alternate;
-        }
-
-        .deep-glow {
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(15, 23, 42, 0.7) 0%, transparent 80%);
-          bottom: 5%;
-          left: 50%;
-          transform: translateX(-50%);
-          filter: blur(80px);
         }
 
         /* Center Content Group */
@@ -245,16 +198,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           justify-content: center;
           backdrop-filter: blur(16px);
           animation: emblemFloat 3s ease-in-out infinite alternate;
-        }
-
-        .logo-glow-underlay {
-          position: absolute;
-          inset: 12px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(0, 210, 255, 0.3) 0%, rgba(168, 85, 247, 0.25) 50%, transparent 80%);
-          filter: blur(10px);
-          z-index: 0;
-          animation: glowPulse 2.5s ease-in-out infinite alternate;
         }
 
         :global(.splash-logo-img) {
