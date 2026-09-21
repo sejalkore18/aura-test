@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ArrowRight, Play, Activity } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
@@ -134,120 +134,190 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [refreshSuccess, setRefreshSuccess] = useState<boolean>(false);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const touchStartYRef = React.useRef<number>(0);
-  const isDraggingRef = React.useRef<boolean>(false);
-  const mouseStartYRef = React.useRef<number>(0);
+  const pullDistanceRef = React.useRef<number>(0);
+  const isRefreshingRef = React.useRef<boolean>(false);
+  const onRefreshRef = React.useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
-  const PULL_THRESHOLD = 64;
-  const MAX_PULL = 90;
+  const PULL_THRESHOLD = 60;
+  const MAX_PULL = 88;
 
-  const handleTriggerRefresh = async () => {
+  const handleTriggerRefresh = React.useCallback(async () => {
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
     setIsRefreshing(true);
     setRefreshSuccess(false);
+
     try {
-      if (onRefresh) {
-        await onRefresh();
+      if (onRefreshRef.current) {
+        await onRefreshRef.current();
       } else {
-        await new Promise((r) => setTimeout(r, 1100));
+        await new Promise((r) => setTimeout(r, 1000));
       }
       setRefreshSuccess(true);
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 380));
     } catch {
       // ignore
     } finally {
+      isRefreshingRef.current = false;
       setIsRefreshing(false);
       setRefreshSuccess(false);
+      pullDistanceRef.current = 0;
       setPullDistance(0);
       setIsPulling(false);
     }
-  };
+  }, []);
 
-  // Touch handlers
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (isRefreshing) return;
-    const scrollParent = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
-    if (scrollParent && scrollParent.scrollTop > 2) return;
+  // Multi-input gesture listeners (Trackpad Wheel, Mobile Touch, Mouse Drag)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const scrollParent = (el.closest('.tab-scroll-viewport') as HTMLElement | null) || el;
 
-    touchStartYRef.current = e.touches[0].clientY;
-    setIsPulling(true);
-  };
+    let touchStartY = 0;
+    let isTouchActive = false;
+    let wheelTimeout: NodeJS.Timeout | null = null;
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isPulling || isRefreshing) return;
-    const scrollParent = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
-    if (scrollParent && scrollParent.scrollTop > 2) {
-      if (pullDistance > 0) setPullDistance(0);
-      return;
-    }
+    // 1. TOUCH (Mobile devices & devtools touch emulation)
+    const onTouchStart = (e: TouchEvent) => {
+      if (isRefreshingRef.current) return;
+      if (scrollParent.scrollTop > 2) return;
+      touchStartY = e.touches[0].clientY;
+      isTouchActive = true;
+    };
 
-    const currentY = e.touches[0].clientY;
-    const deltaY = currentY - touchStartYRef.current;
-
-    if (deltaY > 0) {
-      const damped = Math.min(MAX_PULL, deltaY * 0.45);
-      setPullDistance(damped);
-      if (e.cancelable && damped > 5) {
-        e.preventDefault();
-      }
-    } else {
-      setPullDistance(0);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!isPulling || isRefreshing) return;
-    setIsPulling(false);
-    if (pullDistance >= PULL_THRESHOLD) {
-      setPullDistance(54);
-      handleTriggerRefresh();
-    } else {
-      setPullDistance(0);
-    }
-  };
-
-  // Mouse drag handlers for desktop
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isRefreshing || e.button !== 0) return;
-    const scrollParent = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
-    if (scrollParent && scrollParent.scrollTop > 2) return;
-
-    isDraggingRef.current = true;
-    mouseStartYRef.current = e.clientY;
-    setIsPulling(true);
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingRef.current) return;
-      const scrollParentNow = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
-      if (scrollParentNow && scrollParentNow.scrollTop > 2) {
-        setPullDistance(0);
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isTouchActive || isRefreshingRef.current) return;
+      if (scrollParent.scrollTop > 2) {
+        if (pullDistanceRef.current > 0) {
+          pullDistanceRef.current = 0;
+          setPullDistance(0);
+        }
         return;
       }
-      const deltaY = moveEvent.clientY - mouseStartYRef.current;
+
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - touchStartY;
+
       if (deltaY > 0) {
+        if (e.cancelable) e.preventDefault();
         const damped = Math.min(MAX_PULL, deltaY * 0.45);
+        pullDistanceRef.current = damped;
         setPullDistance(damped);
+        setIsPulling(true);
       } else {
+        pullDistanceRef.current = 0;
         setPullDistance(0);
       }
     };
 
-    const handleMouseUp = () => {
-      isDraggingRef.current = false;
+    const onTouchEnd = () => {
+      if (!isTouchActive || isRefreshingRef.current) return;
+      isTouchActive = false;
       setIsPulling(false);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      setPullDistance((prev) => {
-        if (prev >= PULL_THRESHOLD) {
-          setTimeout(handleTriggerRefresh, 0);
-          return 54;
-        }
-        return 0;
-      });
+      if (pullDistanceRef.current >= PULL_THRESHOLD) {
+        pullDistanceRef.current = 54;
+        setPullDistance(54);
+        handleTriggerRefresh();
+      } else {
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+      }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-  };
+    // 2. TRACKPAD & MOUSE WHEEL (Two-finger swipe down on Mac)
+    const onWheel = (e: WheelEvent) => {
+      if (isRefreshingRef.current) return;
+      if (scrollParent.scrollTop <= 0) {
+        if (e.deltaY < 0 || pullDistanceRef.current > 0) {
+          if (e.cancelable) e.preventDefault();
+          const change = -e.deltaY * 0.4;
+          const next = Math.max(0, Math.min(MAX_PULL, pullDistanceRef.current + change));
+          pullDistanceRef.current = next;
+          setPullDistance(next);
+          setIsPulling(true);
+
+          if (wheelTimeout) clearTimeout(wheelTimeout);
+          wheelTimeout = setTimeout(() => {
+            setIsPulling(false);
+            if (pullDistanceRef.current >= PULL_THRESHOLD) {
+              pullDistanceRef.current = 54;
+              setPullDistance(54);
+              handleTriggerRefresh();
+            } else {
+              pullDistanceRef.current = 0;
+              setPullDistance(0);
+            }
+          }, 180);
+        }
+      }
+    };
+
+    // 3. MOUSE DRAG (Desktop testing)
+    const onMouseDown = (e: MouseEvent) => {
+      if (isRefreshingRef.current || e.button !== 0) return;
+      if (scrollParent.scrollTop > 2) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('button') || target?.closest('a') || target?.closest('input')) {
+        return;
+      }
+      const startY = e.clientY;
+      let isDragging = false;
+
+      const onMouseMove = (me: MouseEvent) => {
+        if (scrollParent.scrollTop > 2) {
+          pullDistanceRef.current = 0;
+          setPullDistance(0);
+          return;
+        }
+        const deltaY = me.clientY - startY;
+        if (deltaY > 4) {
+          isDragging = true;
+          me.preventDefault();
+          const damped = Math.min(MAX_PULL, deltaY * 0.45);
+          pullDistanceRef.current = damped;
+          setPullDistance(damped);
+          setIsPulling(true);
+        } else if (isDragging) {
+          pullDistanceRef.current = 0;
+          setPullDistance(0);
+        }
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        if (!isDragging) return;
+        setIsPulling(false);
+        if (pullDistanceRef.current >= PULL_THRESHOLD) {
+          pullDistanceRef.current = 54;
+          setPullDistance(54);
+          handleTriggerRefresh();
+        } else {
+          pullDistanceRef.current = 0;
+          setPullDistance(0);
+        }
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    };
+
+    scrollParent.addEventListener('touchstart', onTouchStart, { passive: false });
+    scrollParent.addEventListener('touchmove', onTouchMove, { passive: false });
+    scrollParent.addEventListener('touchend', onTouchEnd);
+    scrollParent.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('mousedown', onMouseDown);
+
+    return () => {
+      scrollParent.removeEventListener('touchstart', onTouchStart);
+      scrollParent.removeEventListener('touchmove', onTouchMove);
+      scrollParent.removeEventListener('touchend', onTouchEnd);
+      scrollParent.removeEventListener('wheel', onWheel);
+      el.removeEventListener('mousedown', onMouseDown);
+      if (wheelTimeout) clearTimeout(wheelTimeout);
+    };
+  }, [handleTriggerRefresh]);
 
   // User switch animation state
   const [isSwitching, setIsSwitching] = useState<boolean>(false);
@@ -483,26 +553,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div
       className="dashboard-container"
       ref={containerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
       style={{ userSelect: isPulling ? 'none' : 'auto' }}
     >
       {/* Pull To Refresh Indicator Banner (Home Screen Only) */}
       <div
         className={`pull-refresh-banner ${isRefreshing ? 'refreshing' : ''} ${refreshSuccess ? 'success' : ''}`}
         style={{
-          height: isRefreshing ? 54 : `${pullDistance}px`,
           opacity: isRefreshing ? 1 : Math.min(1, pullDistance / 24),
-          marginBottom: isRefreshing || pullDistance > 0 ? 8 : 0,
-          transition: isPulling ? 'none' : 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-bottom 0.35s ease',
+          transform: `translateY(${isRefreshing ? 6 : Math.min(pullDistance - 48, 8)}px)`,
+          transition: isPulling ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
         }}
         aria-hidden={pullDistance === 0 && !isRefreshing}
       >
         <div className="pull-refresh-inner">
           <div className={`pull-emblem-badge ${isRefreshing ? 'spin-glow' : ''}`}>
-            <svg className="pull-progress-ring" viewBox="0 0 36 36">
               <defs>
                 <linearGradient id="cosmicPullGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#00e5ff" />
@@ -529,7 +593,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 strokeDasharray="94.25"
                 strokeDashoffset={isRefreshing ? 25 : Math.max(0, 94.25 * (1 - pullDistance / PULL_THRESHOLD))}
               />
-            </svg>
 
             <div className="pull-logo-box">
               <Image
@@ -554,6 +617,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Dashboard Body Content - Translates smoothly on pull without altering flex gaps */}
+      <div
+        className="dashboard-scrollable-content"
+        style={{
+          transform: `translateY(${isRefreshing ? 54 : pullDistance}px)`,
+          transition: isPulling ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
 
       {/* 1. Header Greeting Bar (Dark Mode) */}
       <header className="dashboard-header">
@@ -772,16 +844,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Guaranteed Bottom Spacer between Today's Activity and Bottom Navigation Bar */}
       <div className="dashboard-bottom-spacer" />
+      </div>
 
       <style jsx>{`
         /* Pull-To-Refresh Indicator Styles */
+        .dashboard-container {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          background-color: var(--bg-primary, #08080a);
+          color: var(--text-primary, #e4e4e7);
+          min-height: 100%;
+          font-family: var(--font-body);
+        }
+
         .pull-refresh-banner {
-          width: 100%;
-          overflow: hidden;
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 52px;
           display: flex;
           align-items: center;
           justify-content: center;
           pointer-events: none;
+          z-index: 30;
           box-sizing: border-box;
         }
 
@@ -790,7 +877,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           align-items: center;
           justify-content: center;
           gap: 10px;
-          height: 54px;
+          height: 100%;
           padding: 0 16px;
         }
 
@@ -822,7 +909,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         .ring-bar {
           stroke-linecap: round;
           transition: stroke-dashoffset 0.08s ease-out;
-          filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.6));
         }
 
         .pull-logo-box {
@@ -835,7 +921,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         :global(.pull-logo-img) {
-          filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.5));
+          filter: none;
         }
 
         .pull-status-label {
@@ -848,13 +934,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         .pull-refresh-banner.refreshing .pull-status-label {
-          color: #00e5ff;
-          text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+          color: #94a3b8;
         }
 
         .pull-refresh-banner.success .pull-status-label {
-          color: #30d158;
-          text-shadow: 0 0 8px rgba(48, 209, 88, 0.5);
+          color: #94a3b8;
         }
 
         @keyframes cosmicSpin {
@@ -866,15 +950,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           }
         }
 
-        .dashboard-container {
+        .dashboard-scrollable-content {
           display: flex;
           flex-direction: column;
           gap: 22px;
           padding: 24px 20px 0;
-          background-color: var(--bg-primary, #08080a);
-          color: var(--text-primary, #e4e4e7);
-          min-height: 100%;
-          font-family: var(--font-body);
+          width: 100%;
+          will-change: transform;
         }
 
         .dashboard-bottom-spacer {
