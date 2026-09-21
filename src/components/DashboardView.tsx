@@ -108,6 +108,7 @@ interface DashboardViewProps {
   onOpenExerciseDetails: (exercise: Exercise) => void;
   onGoToWorkoutTab: () => void;
   onGoToHistoryTab: () => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -124,7 +125,130 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenExerciseDetails,
   onGoToWorkoutTab,
   onGoToHistoryTab,
+  onRefresh,
 }) => {
+  // Pull to refresh state
+  const [pullDistance, setPullDistance] = useState<number>(0);
+  const [isPulling, setIsPulling] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [refreshSuccess, setRefreshSuccess] = useState<boolean>(false);
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const touchStartYRef = React.useRef<number>(0);
+  const isDraggingRef = React.useRef<boolean>(false);
+  const mouseStartYRef = React.useRef<number>(0);
+
+  const PULL_THRESHOLD = 64;
+  const MAX_PULL = 90;
+
+  const handleTriggerRefresh = async () => {
+    setIsRefreshing(true);
+    setRefreshSuccess(false);
+    try {
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+      setRefreshSuccess(true);
+      await new Promise((r) => setTimeout(r, 400));
+    } catch {
+      // ignore
+    } finally {
+      setIsRefreshing(false);
+      setRefreshSuccess(false);
+      setPullDistance(0);
+      setIsPulling(false);
+    }
+  };
+
+  // Touch handlers
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isRefreshing) return;
+    const scrollParent = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
+    if (scrollParent && scrollParent.scrollTop > 2) return;
+
+    touchStartYRef.current = e.touches[0].clientY;
+    setIsPulling(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isPulling || isRefreshing) return;
+    const scrollParent = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
+    if (scrollParent && scrollParent.scrollTop > 2) {
+      if (pullDistance > 0) setPullDistance(0);
+      return;
+    }
+
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartYRef.current;
+
+    if (deltaY > 0) {
+      const damped = Math.min(MAX_PULL, deltaY * 0.45);
+      setPullDistance(damped);
+      if (e.cancelable && damped > 5) {
+        e.preventDefault();
+      }
+    } else {
+      setPullDistance(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPulling || isRefreshing) return;
+    setIsPulling(false);
+    if (pullDistance >= PULL_THRESHOLD) {
+      setPullDistance(54);
+      handleTriggerRefresh();
+    } else {
+      setPullDistance(0);
+    }
+  };
+
+  // Mouse drag handlers for desktop
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isRefreshing || e.button !== 0) return;
+    const scrollParent = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
+    if (scrollParent && scrollParent.scrollTop > 2) return;
+
+    isDraggingRef.current = true;
+    mouseStartYRef.current = e.clientY;
+    setIsPulling(true);
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const scrollParentNow = containerRef.current?.closest('.tab-scroll-viewport') as HTMLElement | null;
+      if (scrollParentNow && scrollParentNow.scrollTop > 2) {
+        setPullDistance(0);
+        return;
+      }
+      const deltaY = moveEvent.clientY - mouseStartYRef.current;
+      if (deltaY > 0) {
+        const damped = Math.min(MAX_PULL, deltaY * 0.45);
+        setPullDistance(damped);
+      } else {
+        setPullDistance(0);
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      setIsPulling(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setPullDistance((prev) => {
+        if (prev >= PULL_THRESHOLD) {
+          setTimeout(handleTriggerRefresh, 0);
+          return 54;
+        }
+        return 0;
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
   // User switch animation state
   const [isSwitching, setIsSwitching] = useState<boolean>(false);
   const [isExiting, setIsExiting] = useState<boolean>(false);
@@ -356,7 +480,81 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="dashboard-container">
+    <div
+      className="dashboard-container"
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      style={{ userSelect: isPulling ? 'none' : 'auto' }}
+    >
+      {/* Pull To Refresh Indicator Banner (Home Screen Only) */}
+      <div
+        className={`pull-refresh-banner ${isRefreshing ? 'refreshing' : ''} ${refreshSuccess ? 'success' : ''}`}
+        style={{
+          height: isRefreshing ? 54 : `${pullDistance}px`,
+          opacity: isRefreshing ? 1 : Math.min(1, pullDistance / 24),
+          marginBottom: isRefreshing || pullDistance > 0 ? 8 : 0,
+          transition: isPulling ? 'none' : 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-bottom 0.35s ease',
+        }}
+        aria-hidden={pullDistance === 0 && !isRefreshing}
+      >
+        <div className="pull-refresh-inner">
+          <div className={`pull-emblem-badge ${isRefreshing ? 'spin-glow' : ''}`}>
+            <svg className="pull-progress-ring" viewBox="0 0 36 36">
+              <defs>
+                <linearGradient id="cosmicPullGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#00e5ff" />
+                  <stop offset="50%" stopColor="#38bdf8" />
+                  <stop offset="100%" stopColor="#c084fc" />
+                </linearGradient>
+              </defs>
+              <circle
+                className="ring-bg"
+                cx="18"
+                cy="18"
+                r="15"
+                fill="none"
+                strokeWidth="2.5"
+              />
+              <circle
+                className="ring-bar"
+                cx="18"
+                cy="18"
+                r="15"
+                fill="none"
+                stroke="url(#cosmicPullGrad)"
+                strokeWidth="2.5"
+                strokeDasharray="94.25"
+                strokeDashoffset={isRefreshing ? 25 : Math.max(0, 94.25 * (1 - pullDistance / PULL_THRESHOLD))}
+              />
+            </svg>
+
+            <div className="pull-logo-box">
+              <Image
+                src="/logo-cosmic.png"
+                alt="Aura"
+                width={18}
+                height={18}
+                priority
+                className="pull-logo-img"
+              />
+            </div>
+          </div>
+
+          <span className="pull-status-label">
+            {refreshSuccess
+              ? 'Synced'
+              : isRefreshing
+              ? 'Syncing Aura...'
+              : pullDistance >= PULL_THRESHOLD
+              ? 'Release to refresh'
+              : 'Pull to refresh'}
+          </span>
+        </div>
+      </div>
+
       {/* 1. Header Greeting Bar (Dark Mode) */}
       <header className="dashboard-header">
         <div className="user-greeting-group">
@@ -576,6 +774,98 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="dashboard-bottom-spacer" />
 
       <style jsx>{`
+        /* Pull-To-Refresh Indicator Styles */
+        .pull-refresh-banner {
+          width: 100%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          box-sizing: border-box;
+        }
+
+        .pull-refresh-inner {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          height: 54px;
+          padding: 0 16px;
+        }
+
+        .pull-emblem-badge {
+          position: relative;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .pull-emblem-badge.spin-glow {
+          animation: cosmicSpin 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .pull-progress-ring {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          transform: rotate(-90deg);
+        }
+
+        .ring-bg {
+          stroke: rgba(255, 255, 255, 0.08);
+        }
+
+        .ring-bar {
+          stroke-linecap: round;
+          transition: stroke-dashoffset 0.08s ease-out;
+          filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.6));
+        }
+
+        .pull-logo-box {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+        }
+
+        :global(.pull-logo-img) {
+          filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.5));
+        }
+
+        .pull-status-label {
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #94a3b8;
+          transition: color 0.2s ease;
+        }
+
+        .pull-refresh-banner.refreshing .pull-status-label {
+          color: #00e5ff;
+          text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+        }
+
+        .pull-refresh-banner.success .pull-status-label {
+          color: #30d158;
+          text-shadow: 0 0 8px rgba(48, 209, 88, 0.5);
+        }
+
+        @keyframes cosmicSpin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
         .dashboard-container {
           display: flex;
           flex-direction: column;

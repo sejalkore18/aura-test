@@ -15,6 +15,7 @@ import { ExerciseLibraryView } from '@/components/ExerciseLibraryView';
 import { HistoryView } from '@/components/HistoryView';
 import { ProfileView } from '@/components/ProfileView';
 import { DashboardView } from '@/components/DashboardView';
+import { SplashScreen } from '@/components/SplashScreen';
 import {
   WorkoutRoutine,
   WorkoutSet,
@@ -63,6 +64,9 @@ export default function HomePage() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState<boolean>(false);
   const [templateModalMode, setTemplateModalMode] = useState<'create' | 'edit'>('create');
   const [templateModalRoutine, setTemplateModalRoutine] = useState<WorkoutRoutine | null>(null);
+
+  // App Initial / Refresh Loading Splash Screen State
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Find active routine object
   const currentRoutine: WorkoutRoutine =
@@ -768,6 +772,11 @@ export default function HomePage() {
 
   return (
     <PhoneFrame>
+      {/* App Refresh / Initial Loading Splash Screen */}
+      {isLoading && (
+        <SplashScreen onComplete={() => setIsLoading(false)} />
+      )}
+
       {/* Universal Top AppBar (shown on sub-tabs & player view, hidden on root dashboard) */}
       {(isPlayerViewOpen || activeTab !== 'dashboard') && (
         <AppBar
@@ -835,6 +844,22 @@ export default function HomePage() {
                 onOpenExerciseDetails={(ex) => setSelectedExerciseForGuide(ex)}
                 onGoToWorkoutTab={() => setActiveTab('workout')}
                 onGoToHistoryTab={() => setActiveTab('history')}
+                onRefresh={async () => {
+                  try {
+                    const savedLogs = localStorage.getItem('aura_workout_logs');
+                    if (savedLogs) {
+                      const parsed = JSON.parse(savedLogs);
+                      if (Array.isArray(parsed) && parsed.length > 0) {
+                        setWorkoutLogs(parsed);
+                      }
+                    }
+                    const savedRoutines = localStorage.getItem('aura_routines');
+                    if (savedRoutines) {
+                      setRoutines(JSON.parse(savedRoutines));
+                    }
+                  } catch {}
+                  await new Promise((r) => setTimeout(r, 900));
+                }}
               />
             )}
 
