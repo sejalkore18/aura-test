@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Search, Play, Info, Flame, Dumbbell } from 'lucide-react';
+import { Search, Play, Dumbbell } from 'lucide-react';
 import { Exercise } from '@/types/workout';
 import { EXERCISE_LIBRARY } from '@/data/exercises';
 
@@ -38,13 +38,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
 
   return (
     <div className="library-view animate-fade-in">
-      {/* Header */}
-      <header className="library-header">
-        <h1 className="library-title">Exercise Library</h1>
-        <p className="library-subtitle">
-          Explore exercise forms, pro tips, and targeted muscle groups
-        </p>
-      </header>
+
 
       {/* Search Bar */}
       <div className="search-bar">
@@ -101,25 +95,13 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
             <div className="card-details">
               <div className="name-category-row">
                 <span className="category-tag">{exercise.category.toUpperCase()}</span>
-                <span className="equipment-tag">{exercise.equipment}</span>
+
               </div>
               <h2 className="exercise-name">{exercise.name}</h2>
-              <div className="muscle-preview">
-                <Flame size={12} className="text-green" />
-                <span>{exercise.primaryMuscles.slice(0, 2).join(', ')}</span>
-              </div>
+
             </div>
 
-            <button
-              className="info-action-btn"
-              title="View guide"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectExercise(exercise);
-              }}
-            >
-              <Info size={18} />
-            </button>
+
           </div>
         ))}
       </div>
@@ -133,22 +115,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           color: #e4e4e7;
         }
 
-        .library-header {
-          margin-bottom: 16px;
-        }
 
-        .library-title {
-          font-size: 1.65rem;
-          font-weight: 700;
-          color: #e4e4e7;
-          letter-spacing: -0.02em;
-        }
-
-        .library-subtitle {
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-          margin-top: 4px;
-        }
 
         .search-bar {
           display: flex;
@@ -189,7 +156,8 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           gap: 8px;
           overflow-x: auto;
           margin-bottom: 16px;
-          padding-bottom: 2px;
+          padding-top: 8px;
+          padding-bottom: 10px;
         }
 
         .category-pill {
@@ -212,7 +180,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
         .exercises-list {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 16px;
           flex: 1;
           overflow-y: auto;
         }
@@ -286,10 +254,6 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           letter-spacing: 0.05em;
         }
 
-        .equipment-tag {
-          font-size: 0.72rem;
-          color: var(--text-muted);
-        }
 
         .exercise-name {
           font-size: 1.02rem;
@@ -309,19 +273,6 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
           color: var(--accent-green);
         }
 
-        .info-action-btn {
-          color: var(--text-muted);
-          padding: 8px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .info-action-btn:hover {
-          color: #e4e4e7;
-          background: rgba(255, 255, 255, 0.1);
-        }
       `}</style>
     </div>
   );

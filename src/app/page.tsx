@@ -758,7 +758,7 @@ export default function HomePage() {
       case 'workout':
         return undefined;
       case 'library':
-        return 'All Movements';
+        return undefined;
       case 'history':
         return undefined;
       case 'profile':
@@ -778,9 +778,9 @@ export default function HomePage() {
           activeUser={activeUser}
           allUsers={USER_PROFILES}
           onSwitchUser={handleSwitchUser}
-          showUserSwitcher={!['history', 'workout'].includes(activeTab) && !isPlayerViewOpen}
-          transparentBackButton={['history', 'workout'].includes(activeTab)}
-          titlePosition={['history', 'workout'].includes(activeTab) ? 'left' : 'center'}
+          showUserSwitcher={!['history', 'workout', 'library'].includes(activeTab) && !isPlayerViewOpen}
+          transparentBackButton={['history', 'workout', 'library'].includes(activeTab)}
+          titlePosition={['history', 'workout', 'library'].includes(activeTab) ? 'left' : 'center'}
         />
       )}
 
