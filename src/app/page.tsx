@@ -844,21 +844,10 @@ export default function HomePage() {
                 onOpenExerciseDetails={(ex) => setSelectedExerciseForGuide(ex)}
                 onGoToWorkoutTab={() => setActiveTab('workout')}
                 onGoToHistoryTab={() => setActiveTab('history')}
-                onRefresh={async () => {
-                  try {
-                    const savedLogs = localStorage.getItem('aura_workout_logs');
-                    if (savedLogs) {
-                      const parsed = JSON.parse(savedLogs);
-                      if (Array.isArray(parsed) && parsed.length > 0) {
-                        setWorkoutLogs(parsed);
-                      }
-                    }
-                    const savedRoutines = localStorage.getItem('aura_routines');
-                    if (savedRoutines) {
-                      setRoutines(JSON.parse(savedRoutines));
-                    }
-                  } catch {}
-                  await new Promise((r) => setTimeout(r, 900));
+                onRefresh={() => {
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 350);
                 }}
               />
             )}

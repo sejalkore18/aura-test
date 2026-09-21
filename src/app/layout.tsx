@@ -8,7 +8,14 @@ export const metadata: Metadata = {
   keywords: ['fitness tracker', 'gym workout', 'sets and reps', 'chest press', 'push day', 'workout routine'],
   authors: [{ name: 'Aura Fitness' }],
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/logo-cosmic.png', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
+    apple: [
+      { url: '/logo-cosmic.png', type: 'image/png' },
+    ],
+    shortcut: '/logo-cosmic.png',
   },
 };
 
@@ -28,6 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/png" href="/logo-cosmic.png" />
+        <link rel="apple-touch-icon" href="/logo-cosmic.png" />
+        <link rel="shortcut icon" href="/logo-cosmic.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://app.fitnessai.com" crossOrigin="anonymous" />

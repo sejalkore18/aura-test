@@ -152,19 +152,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       if (onRefreshRef.current) {
         await onRefreshRef.current();
       } else {
-        await new Promise((r) => setTimeout(r, 1000));
+        setTimeout(() => {
+          window.location.reload();
+        }, 350);
       }
-      setRefreshSuccess(true);
-      await new Promise((r) => setTimeout(r, 380));
     } catch {
-      // ignore
-    } finally {
-      isRefreshingRef.current = false;
-      setIsRefreshing(false);
-      setRefreshSuccess(false);
-      pullDistanceRef.current = 0;
-      setPullDistance(0);
-      setIsPulling(false);
+      window.location.reload();
     }
   }, []);
 
@@ -567,33 +560,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <div className="pull-refresh-inner">
           <div className={`pull-emblem-badge ${isRefreshing ? 'spin-glow' : ''}`}>
-              <defs>
-                <linearGradient id="cosmicPullGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#00e5ff" />
-                  <stop offset="50%" stopColor="#38bdf8" />
-                  <stop offset="100%" stopColor="#c084fc" />
-                </linearGradient>
-              </defs>
-              <circle
-                className="ring-bg"
-                cx="18"
-                cy="18"
-                r="15"
-                fill="none"
-                strokeWidth="2.5"
-              />
-              <circle
-                className="ring-bar"
-                cx="18"
-                cy="18"
-                r="15"
-                fill="none"
-                stroke="url(#cosmicPullGrad)"
-                strokeWidth="2.5"
-                strokeDasharray="94.25"
-                strokeDashoffset={isRefreshing ? 25 : Math.max(0, 94.25 * (1 - pullDistance / PULL_THRESHOLD))}
-              />
-
             <div className="pull-logo-box">
               <Image
                 src="/logo-cosmic.png"
