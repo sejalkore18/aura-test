@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
 
 interface CalendarStripProps {
   workoutDates: Set<string>; // ISO strings: 'YYYY-MM-DD'
@@ -34,9 +34,20 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
   // viewDate is used for the expanded month grid
   const [viewDate, setViewDate] = useState<Date>(() => new Date());
 
+  // Slide direction and real-time drag offset for interactive scrolling
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev' | null>(null);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+
   const weekViewRef = useRef<HTMLDivElement>(null);
   const monthViewRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const isMonthExpandedRef = useRef(isMonthExpanded);
+  const hasDraggedRef = useRef(false);
   const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    isMonthExpandedRef.current = isMonthExpanded;
+  }, [isMonthExpanded]);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -121,35 +132,61 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
   const expandedYear = viewDate.getFullYear();
 
   // Handlers
-  const handlePrevWeek = () => {
-    const newAnchor = new Date(anchorDate);
-    newAnchor.setDate(newAnchor.getDate() - 7);
-    setAnchorDate(newAnchor);
-  };
+  const handlePrevWeek = useCallback(() => {
+    setSlideDirection('prev');
+    setAnchorDate(prev => {
+      const newAnchor = new Date(prev);
+      newAnchor.setDate(newAnchor.getDate() - 7);
+      return newAnchor;
+    });
+  }, []);
 
-  const handleNextWeek = () => {
-    const newAnchor = new Date(anchorDate);
-    newAnchor.setDate(newAnchor.getDate() + 7);
-    setAnchorDate(newAnchor);
-  };
+  const handleNextWeek = useCallback(() => {
+    setSlideDirection('next');
+    setAnchorDate(prev => {
+      const newAnchor = new Date(prev);
+      newAnchor.setDate(newAnchor.getDate() + 7);
+      return newAnchor;
+    });
+  }, []);
 
-  const handlePrevMonth = () => {
+  const handlePrevMonth = useCallback(() => {
+    setSlideDirection('prev');
     setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  };
+  }, []);
 
-  const handleNextMonth = () => {
+  const handleNextMonth = useCallback(() => {
+    setSlideDirection('next');
     setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-  };
+  }, []);
+
+  const handleExpandMonth = useCallback(() => {
+    if (!isMonthExpandedRef.current) {
+      setSlideDirection(null);
+      setDragOffset(0);
+      setViewDate(new Date(centerDay.getFullYear(), centerDay.getMonth(), 1));
+      setIsMonthExpanded(true);
+    }
+  }, [centerDay]);
+
+  const handleCollapseMonth = useCallback(() => {
+    if (isMonthExpandedRef.current) {
+      setSlideDirection(null);
+      setDragOffset(0);
+      setIsMonthExpanded(false);
+    }
+  }, []);
 
   const handleToggleMonth = () => {
     if (!isMonthExpanded) {
-      // Sync expanded view to current week's month
-      setViewDate(new Date(centerDay.getFullYear(), centerDay.getMonth(), 1));
+      handleExpandMonth();
+    } else {
+      handleCollapseMonth();
     }
-    setIsMonthExpanded(prev => !prev);
   };
 
   const handleSelectInGrid = (iso: string, dateObj: Date) => {
+    if (hasDraggedRef.current) return;
     if (selectedDate === iso) {
       onSelectDate(null);
     } else {
@@ -165,39 +202,264 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
     onSelectDate(todayIso);
   };
 
+  const handleNextMonthRef = useRef(handleNextMonth);
+  const handlePrevMonthRef = useRef(handlePrevMonth);
+  const handleNextWeekRef = useRef(handleNextWeek);
+  const handlePrevWeekRef = useRef(handlePrevWeek);
+  const handleExpandMonthRef = useRef(handleExpandMonth);
+  const handleCollapseMonthRef = useRef(handleCollapseMonth);
+
+  useEffect(() => {
+    handleNextMonthRef.current = handleNextMonth;
+    handlePrevMonthRef.current = handlePrevMonth;
+    handleNextWeekRef.current = handleNextWeek;
+    handlePrevWeekRef.current = handlePrevWeek;
+    handleExpandMonthRef.current = handleExpandMonth;
+    handleCollapseMonthRef.current = handleCollapseMonth;
+  });
+
+  // Gestures for horizontal month navigation & vertical expand/collapse
+  useEffect(() => {
+    const el = calendarRef.current;
+    if (!el) return;
+
+    let wheelCooldown = false;
+    let wheelTimer: NodeJS.Timeout | null = null;
+
+    const onWheel = (e: WheelEvent) => {
+      // 1. Horizontal scrolling -> change month / week (prioritized with low threshold)
+      if (Math.abs(e.deltaX) >= 8) {
+        e.preventDefault();
+        if (wheelCooldown) return;
+        wheelCooldown = true;
+        if (wheelTimer) clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(() => {
+          wheelCooldown = false;
+        }, 280);
+
+        if (e.deltaX > 0) {
+          if (isMonthExpandedRef.current) {
+            handleNextMonthRef.current();
+          } else {
+            handleNextWeekRef.current();
+          }
+        } else {
+          if (isMonthExpandedRef.current) {
+            handlePrevMonthRef.current();
+          } else {
+            handlePrevWeekRef.current();
+          }
+        }
+        return;
+      }
+
+      // 2. Vertical scrolling on calendar section -> expand / collapse (requires low deltaX)
+      if (Math.abs(e.deltaY) >= 20 && Math.abs(e.deltaX) < 8) {
+        if (e.deltaY < 0 && !isMonthExpandedRef.current) {
+          e.preventDefault();
+          if (wheelCooldown) return;
+          wheelCooldown = true;
+          if (wheelTimer) clearTimeout(wheelTimer);
+          wheelTimer = setTimeout(() => {
+            wheelCooldown = false;
+          }, 350);
+          handleExpandMonthRef.current();
+        } else if (e.deltaY > 0 && isMonthExpandedRef.current) {
+          e.preventDefault();
+          if (wheelCooldown) return;
+          wheelCooldown = true;
+          if (wheelTimer) clearTimeout(wheelTimer);
+          wheelTimer = setTimeout(() => {
+            wheelCooldown = false;
+          }, 350);
+          handleCollapseMonthRef.current();
+        }
+      }
+    };
+
+    // Touch swipe support for mobile
+    let touchStartX: number | null = null;
+    let touchStartY: number | null = null;
+    let touchDeltaX = 0;
+    let touchDeltaY = 0;
+    let isTouchSwipingH = false;
+    let isTouchSwipingV = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchDeltaX = 0;
+      touchDeltaY = 0;
+      isTouchSwipingH = false;
+      isTouchSwipingV = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartX === null || touchStartY === null) return;
+      const dx = e.touches[0].clientX - touchStartX;
+      const dy = e.touches[0].clientY - touchStartY;
+
+      if (!isTouchSwipingH && !isTouchSwipingV) {
+        if (Math.abs(dx) >= 6) {
+          isTouchSwipingH = true;
+        } else if (Math.abs(dy) >= 18 && Math.abs(dx) < 6) {
+          if ((dy > 0 && !isMonthExpandedRef.current) || (dy < 0 && isMonthExpandedRef.current)) {
+            isTouchSwipingV = true;
+          }
+        }
+      }
+
+      if (isTouchSwipingH) {
+        touchDeltaX = dx;
+        setDragOffset(dx * 0.7); // smooth dragging resistance
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      } else if (isTouchSwipingV) {
+        touchDeltaY = dy;
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (isTouchSwipingH) {
+        const threshold = 25;
+        if (touchDeltaX < -threshold) {
+          if (isMonthExpandedRef.current) {
+            handleNextMonthRef.current();
+          } else {
+            handleNextWeekRef.current();
+          }
+        } else if (touchDeltaX > threshold) {
+          if (isMonthExpandedRef.current) {
+            handlePrevMonthRef.current();
+          } else {
+            handlePrevWeekRef.current();
+          }
+        }
+      } else if (isTouchSwipingV) {
+        const threshold = 25;
+        if (touchDeltaY > threshold && !isMonthExpandedRef.current) {
+          handleExpandMonthRef.current();
+        } else if (touchDeltaY < -threshold && isMonthExpandedRef.current) {
+          handleCollapseMonthRef.current();
+        }
+      }
+      setDragOffset(0);
+      touchStartX = null;
+      touchStartY = null;
+      touchDeltaX = 0;
+      touchDeltaY = 0;
+      isTouchSwipingH = false;
+      isTouchSwipingV = false;
+    };
+
+    // Desktop pointer drag support
+    let mouseStartX: number | null = null;
+    let mouseStartY: number | null = null;
+    let isMouseDown = false;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      isMouseDown = true;
+      hasDraggedRef.current = false;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isMouseDown || mouseStartX === null || mouseStartY === null) return;
+      const dx = e.clientX - mouseStartX;
+      const dy = e.clientY - mouseStartY;
+
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        hasDraggedRef.current = true;
+      }
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        setDragOffset(dx * 0.6);
+      }
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      if (isMouseDown && mouseStartX !== null && mouseStartY !== null) {
+        const dx = e.clientX - mouseStartX;
+        const dy = e.clientY - mouseStartY;
+
+        if (Math.abs(dx) >= 20 && Math.abs(dx) >= Math.abs(dy)) {
+          if (dx < 0) {
+            if (isMonthExpandedRef.current) {
+              handleNextMonthRef.current();
+            } else {
+              handleNextWeekRef.current();
+            }
+          } else {
+            if (isMonthExpandedRef.current) {
+              handlePrevMonthRef.current();
+            } else {
+              handlePrevWeekRef.current();
+            }
+          }
+        } else if (Math.abs(dy) >= 25 && Math.abs(dx) < 15) {
+          if (dy > 0 && !isMonthExpandedRef.current) {
+            handleExpandMonthRef.current();
+          } else if (dy < 0 && isMonthExpandedRef.current) {
+            handleCollapseMonthRef.current();
+          }
+        }
+      }
+      setDragOffset(0);
+      isMouseDown = false;
+      mouseStartX = null;
+      mouseStartY = null;
+      setTimeout(() => {
+        hasDraggedRef.current = false;
+      }, 80);
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      if (wheelTimer) clearTimeout(wheelTimer);
+    };
+  }, []);
+
   return (
-    <div className="calendar-strip-container">
+    <div className="calendar-strip-container" ref={calendarRef}>
       {/* 1. Header: Month Year Navigation */}
       <div className="month-navigation-row">
-        <button
-          className="nav-arrow-btn"
-          onClick={isMonthExpanded ? handlePrevMonth : handlePrevWeek}
-          aria-label={isMonthExpanded ? 'Previous month' : 'Previous week'}
-        >
-          <ChevronLeft size={19} />
-        </button>
-
         <button
           type="button"
           className="month-title-btn"
           onClick={handleToggleMonth}
+          onMouseDown={(e) => e.stopPropagation()}
           aria-label={`${isMonthExpanded ? 'Collapse' : 'Expand'} calendar for ${isMonthExpanded ? expandedMonthName : monthName} ${isMonthExpanded ? expandedYear : yearNumber}`}
         >
-          <span className="month-title-text">
+          <span
+            key={isMonthExpanded ? `${expandedMonthName}-${expandedYear}` : `${monthName}-${yearNumber}`}
+            className="month-title-text"
+          >
             {isMonthExpanded ? `${expandedMonthName} ${expandedYear}` : `${monthName} ${yearNumber}`}
           </span>
           <ChevronDown
             size={14}
             className={`month-title-chevron ${isMonthExpanded ? 'chevron-open' : ''}`}
           />
-        </button>
-
-        <button
-          className="nav-arrow-btn"
-          onClick={isMonthExpanded ? handleNextMonth : handleNextWeek}
-          aria-label={isMonthExpanded ? 'Next month' : 'Next week'}
-        >
-          <ChevronRight size={19} />
         </button>
       </div>
 
@@ -224,7 +486,14 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
               className={`calendar-view-layer ${!isMonthExpanded ? 'active' : 'inactive'}`}
               aria-hidden={isMonthExpanded}
             >
-              <div key={formatIso(anchorDate)} className="week-dates-grid">
+              <div
+                key={formatIso(anchorDate)}
+                className={`week-dates-grid ${slideDirection ? `slide-${slideDirection}` : ''}`}
+                style={{
+                  transform: dragOffset ? `translate3d(${dragOffset}px, 0, 0)` : undefined,
+                  transition: dragOffset ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+              >
                 {weekDays.map((d) => {
                   const iso = formatIso(d);
                   const isSelected = selectedDate === iso;
@@ -245,6 +514,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
                           ${hasWorkout ? 'has-workout' : ''}
                         `}
                         onClick={() => {
+                          if (hasDraggedRef.current) return;
                           if (isSelected) {
                             onSelectDate(null);
                           } else {
@@ -283,7 +553,14 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
               className={`calendar-view-layer ${isMonthExpanded ? 'active' : 'inactive'}`}
               aria-hidden={!isMonthExpanded}
             >
-              <div key={`${viewDate.getFullYear()}-${viewDate.getMonth()}`} className="month-dates-grid">
+              <div
+                key={`${viewDate.getFullYear()}-${viewDate.getMonth()}`}
+                className={`month-dates-grid ${slideDirection ? `slide-${slideDirection}` : ''}`}
+                style={{
+                  transform: dragOffset ? `translate3d(${dragOffset}px, 0, 0)` : undefined,
+                  transition: dragOffset ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+              >
                 {monthGridCells.map((cell) => (
                   <div key={cell.iso} className="month-day-col">
                     <button
@@ -295,7 +572,10 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
                         ${cell.isToday && selectedDate !== cell.iso ? 'is-today' : ''}
                         ${cell.hasWorkout ? 'has-workout' : ''}
                       `}
-                      onClick={() => handleSelectInGrid(cell.iso, cell.date)}
+                      onClick={() => {
+                        if (hasDraggedRef.current) return;
+                        handleSelectInGrid(cell.iso, cell.date);
+                      }}
                       title={`${cell.iso}${cell.hasWorkout ? ' · Workout logged' : ''}`}
                     >
                       {selectedDate === cell.iso ? (
@@ -353,33 +633,9 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
         .month-navigation-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           width: 100%;
           padding: 0 4px;
-        }
-
-        .nav-arrow-btn {
-          background: transparent;
-          border: none;
-          color: #e4e4e7;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 6px;
-          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-          cursor: pointer;
-          flex-shrink: 0;
-          opacity: 0.85;
-        }
-
-        .nav-arrow-btn:hover {
-          opacity: 1;
-          transform: scale(1.15);
-        }
-
-        .nav-arrow-btn:active {
-          transform: scale(0.9);
-          opacity: 0.7;
         }
 
         .month-title-btn {
@@ -406,12 +662,24 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           transform: scale(0.96);
         }
 
+        @keyframes monthTitleChange {
+          0% {
+            opacity: 0.2;
+            transform: translateY(3px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         .month-title-text {
           font-family: var(--font-display);
           font-size: 0.94rem;
           font-weight: 700;
           letter-spacing: -0.01em;
           white-space: nowrap;
+          animation: monthTitleChange 0.24s ease-out;
         }
 
         .month-title-chevron {
@@ -515,6 +783,9 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           flex-direction: column;
           gap: 6px;
           width: 100%;
+          touch-action: pan-y;
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         .month-weekdays-header {
@@ -534,12 +805,52 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
           text-align: center;
         }
 
+        /* 4. Sliding Grid Keyframe Animations */
+        @keyframes calendarSlideInNext {
+          0% {
+            opacity: 0;
+            transform: translateX(48px);
+          }
+          60% {
+            opacity: 0.85;
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes calendarSlideInPrev {
+          0% {
+            opacity: 0;
+            transform: translateX(-48px);
+          }
+          60% {
+            opacity: 0.85;
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
         .week-dates-grid,
         .month-dates-grid {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
           row-gap: 6px;
           column-gap: 4px;
+          will-change: transform, opacity;
+        }
+
+        .week-dates-grid.slide-next,
+        .month-dates-grid.slide-next {
+          animation: calendarSlideInNext 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .week-dates-grid.slide-prev,
+        .month-dates-grid.slide-prev {
+          animation: calendarSlideInPrev 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .month-day-col {

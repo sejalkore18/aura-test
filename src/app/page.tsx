@@ -696,6 +696,12 @@ export default function HomePage() {
     saveWorkoutLogs([]);
   };
 
+  // Delete single workout log
+  const handleDeleteWorkoutLog = (logId: string) => {
+    const updated = workoutLogs.filter((l) => l.id !== logId);
+    saveWorkoutLogs(updated);
+  };
+
   const currentRoutineExercise =
     currentRoutine?.exercises?.[currentExerciseIndex] || currentRoutine?.exercises?.[0];
   const activeExerciseData: Exercise = currentRoutineExercise
@@ -866,6 +872,7 @@ export default function HomePage() {
                 logs={workoutLogs}
                 activeUser={activeUser}
                 onClearHistory={handleClearHistory}
+                onDeleteLog={handleDeleteWorkoutLog}
                 onGoToWorkouts={() => setActiveTab('workout')}
               />
             )}
