@@ -98,7 +98,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           right: 0;
           z-index: 60;
           flex-shrink: 0;
-          padding: 8px 16px 14px;
+          padding: 8px 16px calc(14px + env(safe-area-inset-bottom));
           margin-top: auto;
           background: rgba(14, 14, 18, 0.95);
           backdrop-filter: blur(20px);

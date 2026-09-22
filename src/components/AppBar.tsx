@@ -97,16 +97,25 @@ export const AppBar: React.FC<AppBarProps> = ({
           left: 0;
           right: 0;
           z-index: 70;
-          height: 56px;
+          height: auto;
+          min-height: 56px;
           background: rgba(8, 8, 10, 0.95);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: space-between;
-          padding: 0 16px;
+          padding: env(safe-area-inset-top) 16px 0;
+          padding-top: env(safe-area-inset-top);
           flex-shrink: 0;
+        }
+
+        /* Inner row always 56px tall so content is properly centred */
+        .left-slot,
+        .center-slot,
+        .right-slot {
+          height: 56px;
         }
 
         .left-slot {
