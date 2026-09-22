@@ -834,15 +834,20 @@ export default function HomePage() {
                 completedExerciseIds={completedExerciseIds}
                 workoutLogs={workoutLogs}
                 onStartWorkout={() => {
+                  setIsPlayerViewOpen(false);
+                  setSelectedSummaryRoutineId(null);
                   setActiveTab('workout');
-                  handleStartWorkout();
                 }}
                 onSelectExercise={(idx) => {
                   setActiveTab('workout');
                   handleSelectExerciseToStart(idx);
                 }}
                 onOpenExerciseDetails={(ex) => setSelectedExerciseForGuide(ex)}
-                onGoToWorkoutTab={() => setActiveTab('workout')}
+                onGoToWorkoutTab={() => {
+                  setIsPlayerViewOpen(false);
+                  setSelectedSummaryRoutineId(null);
+                  setActiveTab('workout');
+                }}
                 onGoToHistoryTab={() => setActiveTab('history')}
                 onRefresh={() => {
                   setTimeout(() => {

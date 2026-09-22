@@ -629,10 +629,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <section
         className={`workout-progress-card ${isExiting ? 'card-fade-out' : 'animate-card-fade'} ${isRestDay && !isWorkoutInProgress ? 'workout-progress-card--rest' : ''}`}
         key={`workout-${activeUser.id}`}
-        onClick={isRestDay && !isWorkoutInProgress ? undefined : onStartWorkout}
-        role={isRestDay && !isWorkoutInProgress ? undefined : 'button'}
-        tabIndex={isRestDay && !isWorkoutInProgress ? undefined : 0}
-        aria-label={isRestDay && !isWorkoutInProgress ? "Rest day" : "Start or view today's workout"}
+        onClick={onGoToWorkoutTab}
+        role="button"
+        tabIndex={0}
+        aria-label={isRestDay && !isWorkoutInProgress ? "Rest day - view workouts" : "View workout page"}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onGoToWorkoutTab();
+          }
+        }}
       >
         <div className="progress-card-content">
           <div className="progress-text-block">
@@ -798,12 +804,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Activity size={28} strokeWidth={2.2} className="no-activity-icon" />
             </div>
             <div className="no-activity-text-content">
-              <h3 className="no-activity-title">No workout completed today</h3>
               <p className="no-activity-subtitle">Complete today&apos;s routine to track your activity and calories</p>
             </div>
-            <button className="no-activity-start-btn" onClick={onStartWorkout}>
-              Start Workout
-            </button>
           </div>
         )}
       </section>
@@ -1121,7 +1123,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         }
 
         .workout-progress-card--rest {
-          cursor: default;
+          cursor: pointer;
           background: rgba(18, 18, 26, 0.75);
           border-color: rgba(99, 102, 241, 0.18);
           box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(99, 102, 241, 0.08);
