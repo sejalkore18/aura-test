@@ -43,6 +43,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  /* Dark background covers any gap visible behind the fixed PWA shell
+     during overscroll or pull-to-refresh on Android */
+  background-color: #08080a;
+  overscroll-behavior: none;
+  height: 100%;
+}
+
 html, body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -50,7 +58,7 @@ html, body {
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

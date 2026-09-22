@@ -44,11 +44,17 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({ children }) => {
 
         @media (max-width: 640px) {
           .app-shell {
+            /* position: fixed is immune to pull-to-refresh overscroll.
+               Unlike height/padding approaches, a fixed element never
+               moves or recalculates during scroll gestures. */
+            position: fixed;
+            inset: 0;
             padding: 0;
-            background: #000000;
-            height: 100dvh;
-            min-height: 100dvh;
-            /* Push the entire app inside the safe areas */
+            height: auto;
+            min-height: 0;
+            background: #08080a;
+            overscroll-behavior: none;
+            /* Carve safe areas inside the fixed shell */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
             padding-left: env(safe-area-inset-left);
@@ -57,8 +63,8 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({ children }) => {
           }
 
           .app-container {
-            max-width: 100vw;
-            /* Fill remaining space after safe area padding is applied */
+            max-width: 100%;
+            width: 100%;
             height: 100%;
             max-height: 100%;
             min-height: 0;
