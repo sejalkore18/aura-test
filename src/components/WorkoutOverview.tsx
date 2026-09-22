@@ -964,11 +964,12 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           position: sticky;
           bottom: 28px;
           z-index: 50;
+          height: 0;
+          overflow: visible;
           display: flex;
           justify-content: flex-end;
+          align-items: flex-end;
           pointer-events: none;
-          margin-top: auto;
-          padding-top: 12px;
           padding-right: 8px;
         }
 
