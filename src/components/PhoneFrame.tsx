@@ -48,13 +48,20 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({ children }) => {
             background: #000000;
             height: 100dvh;
             min-height: 100dvh;
+            /* Push the entire app inside the safe areas */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            box-sizing: border-box;
           }
 
           .app-container {
             max-width: 100vw;
-            height: 100dvh;
-            max-height: 100dvh;
-            min-height: 100dvh;
+            /* Fill remaining space after safe area padding is applied */
+            height: 100%;
+            max-height: 100%;
+            min-height: 0;
             border: none;
             border-radius: 0;
             box-shadow: none;
