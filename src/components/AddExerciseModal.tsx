@@ -51,20 +51,12 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
   const handleConfirmAdd = () => {
     if (!selectedExercise) return;
 
-    const sets = Array.from({ length: targetSets }, (_, i) => ({
-      setNumber: i + 1,
-      targetReps: targetReps,
-      actualReps: targetReps,
-      weightKg: targetWeightKg,
-      completed: false,
-    }));
-
     const routineEx: RoutineExercise = {
       exerciseId: selectedExercise.id,
       targetSets,
       targetReps,
       targetWeightKg,
-      sets,
+      sets: targetSets,
     };
 
     onAddExercise(routineEx);

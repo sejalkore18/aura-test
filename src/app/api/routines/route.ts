@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { WorkoutRoutineModel } from '@/models/WorkoutRoutine';
-import { DEFAULT_ROUTINES } from '@/data/exercises';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,25 +13,7 @@ export async function GET(request: NextRequest) {
       query.userId = userId;
     }
 
-    let routines = await WorkoutRoutineModel.find(query).lean();
-
-    // If the database has no routines yet, seed default templates for the user(s)
-    if (routines.length === 0) {
-      const targetUsers: ('sejal' | 'bhaumik')[] = userId && (userId === 'sejal' || userId === 'bhaumik')
-        ? [userId]
-        : ['sejal', 'bhaumik'];
-
-      const defaultDocs = targetUsers.flatMap((u) =>
-        DEFAULT_ROUTINES.map((r) => ({
-          ...r,
-          id: `${u}_${r.id}`,
-          userId: u,
-        }))
-      );
-      await WorkoutRoutineModel.insertMany(defaultDocs);
-      routines = await WorkoutRoutineModel.find(query).lean();
-    }
-
+    const routines = await WorkoutRoutineModel.find(query).lean();
     return NextResponse.json({ success: true, routines });
   } catch (error: unknown) {
     const err = error as Error;
@@ -43,19 +24,43 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function sanitizeTemplateRoutine(routine: any) {
+  return {
+    ...routine,
+    exercises: (routine.exercises || []).map((ex: any) => {
+      const setCount =
+        typeof ex.sets === 'number'
+          ? ex.sets
+          : Array.isArray(ex.sets)
+          ? ex.sets.length
+          : ex.targetSets || 3;
+      return {
+        exerciseId: ex.exerciseId,
+        targetSets: ex.targetSets ?? setCount,
+        targetReps: ex.targetReps ?? 10,
+        targetWeightKg: ex.targetWeightKg ?? 0,
+        sets: setCount,
+      };
+    }),
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
     const body = await request.json();
 
     if (Array.isArray(body)) {
-      const operations = body.map((routine) => ({
-        updateOne: {
-          filter: { id: routine.id },
-          update: { $set: routine },
-          upsert: true,
-        },
-      }));
+      const operations = body.map((routine) => {
+        const sanitized = sanitizeTemplateRoutine(routine);
+        return {
+          updateOne: {
+            filter: { id: sanitized.id },
+            update: { $set: sanitized, $unset: { subtitle: 1 as const, isCustom: 1 as const } },
+            upsert: true,
+          },
+        };
+      });
       const result = await WorkoutRoutineModel.bulkWrite(operations);
       return NextResponse.json({
         success: true,
@@ -71,9 +76,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const sanitized = sanitizeTemplateRoutine(routine);
     const updated = await WorkoutRoutineModel.findOneAndUpdate(
-      { id: routine.id },
-      { $set: routine },
+      { id: sanitized.id },
+      { $set: sanitized, $unset: { subtitle: 1 as const, isCustom: 1 as const } },
       { upsert: true, new: true, runValidators: true }
     );
 

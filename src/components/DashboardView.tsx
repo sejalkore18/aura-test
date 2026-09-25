@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ArrowRight, Play, Activity } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
-import { getExerciseById, EXERCISE_LIBRARY, DEFAULT_ROUTINES } from '@/data/exercises';
+import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 
 // Helper to simplify targeted muscles into clean, friendly lowercase terms matching design
 const formatMusclesForDisplay = (ex?: Exercise, fallbackName?: string): string => {
@@ -392,11 +392,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     // 1. From completed workout(s) logged today
     todayLogs.forEach((log) => {
       // Calculate realistic calories burned for this completed workout
-      const matchedRoutine = [currentRoutine, ...DEFAULT_ROUTINES].find(
-        (r) => r.id === log.routineId || r.title?.toLowerCase() === log.routineTitle?.toLowerCase()
-      );
-      if (matchedRoutine?.estimatedCalories) {
-        todayCaloriesBurned += matchedRoutine.estimatedCalories;
+      const isCurrent =
+        currentRoutine &&
+        (currentRoutine.id === log.routineId ||
+          currentRoutine.title?.toLowerCase() === log.routineTitle?.toLowerCase());
+      if (isCurrent && currentRoutine.estimatedCalories) {
+        todayCaloriesBurned += currentRoutine.estimatedCalories;
       } else {
         const dur = log.durationMinutes || 25;
         const reps = log.totalReps || 45;
@@ -432,17 +433,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .forEach((rEx, idx) => {
         const matchedEx = getExerciseById(rEx.exerciseId) || findExerciseByNameOrId(rEx.exerciseId);
         const exName = matchedEx?.name || rEx.exerciseId;
-        const completedSets = rEx.sets?.filter((s) => s.completed) || [];
-        const setsCount = completedSets.length > 0 ? completedSets.length : rEx.targetSets || 3;
-        const reps =
-          completedSets.length > 0
-            ? Math.round(
-                completedSets.reduce(
-                  (sum, s) => sum + (s.actualReps || s.targetReps),
-                  0
-                ) / completedSets.length
-              )
-            : rEx.targetReps || matchedEx?.defaultReps || 10;
+        const setsCount = typeof rEx.sets === 'number' ? rEx.sets : rEx.targetSets || 3;
+        const reps = rEx.targetReps || matchedEx?.defaultReps || 10;
         const muscles = formatMusclesForDisplay(matchedEx, exName);
         const colorIdx = idx % ACCENT_COLORS.length;
 

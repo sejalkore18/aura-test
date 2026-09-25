@@ -91,7 +91,7 @@ export async function fetchRoutinesFromCloud(userId?: string): Promise<WorkoutRo
     const url = userId ? `/api/routines?userId=${encodeURIComponent(userId)}` : '/api/routines';
     const res = await fetch(url, { cache: 'no-store' });
     const data = await res.json();
-    if (data.success && Array.isArray(data.routines) && data.routines.length > 0) {
+    if (data.success && Array.isArray(data.routines)) {
       return data.routines as WorkoutRoutine[];
     }
     return null;

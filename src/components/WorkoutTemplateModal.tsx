@@ -91,11 +91,20 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         setTitle(initialRoutine.title);
         setScheduledDays(initialRoutine.scheduledDays ?? []);
         setExercises(
-          initialRoutine.exercises.map((ex, i) => ({
-            ...ex,
-            _uid: `uid-${ex.exerciseId}-${i}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            sets: [...ex.sets],
-          }))
+          initialRoutine.exercises.map((ex, i) => {
+            const numSets =
+              typeof ex.sets === 'number'
+                ? ex.sets
+                : Array.isArray(ex.sets)
+                ? (ex.sets as any[]).length
+                : ex.targetSets || 3;
+            return {
+              ...ex,
+              _uid: `uid-${ex.exerciseId}-${i}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              sets: numSets,
+              targetSets: ex.targetSets ?? numSets,
+            };
+          })
         );
       } else {
         setTitle('');
@@ -153,14 +162,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         item.targetWeightKg = safeVal;
       }
 
-      // Re-generate sets blueprint
-      item.sets = Array.from({ length: item.targetSets }, (_, i) => ({
-        setNumber: i + 1,
-        targetReps: item.targetReps,
-        actualReps: item.targetReps,
-        weightKg: item.targetWeightKg,
-        completed: false,
-      }));
+      item.sets = item.targetSets;
 
       updated[index] = item;
       return updated;
@@ -475,13 +477,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
         targetSets: ex.defaultSets || 3,
         targetReps: ex.defaultReps || 10,
         targetWeightKg: ex.defaultWeightKg || 0,
-        sets: Array.from({ length: ex.defaultSets || 3 }, (_, i) => ({
-          setNumber: i + 1,
-          targetReps: ex.defaultReps || 10,
-          actualReps: ex.defaultReps || 10,
-          weightKg: ex.defaultWeightKg || 0,
-          completed: false,
-        })),
+        sets: ex.defaultSets || 3,
       });
     });
 
@@ -522,8 +518,10 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
       title: title.trim(),
       estimatedMinutes,
       estimatedCalories: Math.round(estimatedMinutes * 4),
-      exercises: exercises.map(({ _uid, ...rest }) => rest),
-      isCustom: true,
+      exercises: exercises.map(({ _uid, ...rest }) => ({
+        ...rest,
+        sets: typeof rest.sets === 'number' ? rest.sets : rest.targetSets,
+      })),
       coverImage,
       scheduledDays: scheduledDays.length > 0 ? scheduledDays : undefined,
     };

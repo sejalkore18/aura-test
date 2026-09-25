@@ -26,7 +26,7 @@ import {
   USER_PROFILES,
   DayKey,
 } from '@/types/workout';
-import { DEFAULT_ROUTINES, getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
+import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 import {
   syncBatchLogsToCloud,
   fetchWorkoutLogsFromCloud,
@@ -46,8 +46,8 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
 
   // 1. Routine State
-  const [routines, setRoutines] = useState<WorkoutRoutine[]>(DEFAULT_ROUTINES);
-  const [currentRoutineId, setCurrentRoutineId] = useState<string>('chest-triceps-day');
+  const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
+  const [currentRoutineId, setCurrentRoutineId] = useState<string>('');
 
   // 2. Active Session State
   const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
@@ -82,7 +82,13 @@ export default function HomePage() {
 
   // Find active routine object from visible routines
   const currentRoutine: WorkoutRoutine =
-    visibleRoutines.find((r) => r.id === currentRoutineId) || visibleRoutines[0] || DEFAULT_ROUTINES[0];
+    visibleRoutines.find((r) => r.id === currentRoutineId) ||
+    visibleRoutines[0] || {
+      id: '',
+      title: 'Workout',
+      estimatedMinutes: 0,
+      exercises: [],
+    };
 
   // Derive today's scheduled routine
   const DAY_KEYS: DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -149,7 +155,7 @@ export default function HomePage() {
 
         // 2. Fetch routines directly from MongoDB
         const cloudRoutines = await fetchRoutinesFromCloud();
-        if (cloudRoutines && cloudRoutines.length > 0) {
+        if (cloudRoutines) {
           setRoutines(cloudRoutines);
           try {
             localStorage.setItem('aura_routines', JSON.stringify(cloudRoutines));
@@ -686,13 +692,7 @@ export default function HomePage() {
     item.targetSets = targetSets;
     item.targetReps = targetReps;
     item.targetWeightKg = targetWeightKg;
-    item.sets = Array.from({ length: targetSets }, (_, i) => ({
-      setNumber: i + 1,
-      targetReps,
-      actualReps: targetReps,
-      weightKg: targetWeightKg,
-      completed: false,
-    }));
+    item.sets = targetSets;
 
     exList[exerciseIndex] = item;
 
@@ -710,7 +710,13 @@ export default function HomePage() {
     if (exerciseProgress[item.exerciseId]) {
       setExerciseProgress((prev) => ({
         ...prev,
-        [item.exerciseId]: item.sets,
+        [item.exerciseId]: Array.from({ length: targetSets }, (_, i) => ({
+          setNumber: i + 1,
+          targetReps,
+          actualReps: targetReps,
+          weightKg: targetWeightKg,
+          completed: false,
+        })),
       }));
     }
   };
