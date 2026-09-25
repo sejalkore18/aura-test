@@ -582,6 +582,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           min-height: 100%;
           padding: 18px 20px 28px;
           color: #e4e4e7;
+          background-color: var(--bg-primary, #08080a);
         }
 
         /* Templates List */
