@@ -75,14 +75,19 @@ export default function HomePage() {
   // App Initial / Refresh Loading Splash Screen State
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Find active routine object
+  // Filter routines visible to the active user (own routines or shared starters)
+  const visibleRoutines = routines.filter(
+    (r) => !r.userId || r.userId === 'shared' || r.userId === activeUserId
+  );
+
+  // Find active routine object from visible routines
   const currentRoutine: WorkoutRoutine =
-    routines.find((r) => r.id === currentRoutineId) || routines[0] || DEFAULT_ROUTINES[0];
+    visibleRoutines.find((r) => r.id === currentRoutineId) || visibleRoutines[0] || DEFAULT_ROUTINES[0];
 
   // Derive today's scheduled routine
   const DAY_KEYS: DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   const todayDayKey: DayKey = DAY_KEYS[new Date().getDay()];
-  const todayRoutine: WorkoutRoutine | undefined = routines.find(
+  const todayRoutine: WorkoutRoutine | undefined = visibleRoutines.find(
     (r) => r.scheduledDays && r.scheduledDays.includes(todayDayKey)
   );
   const isRestDay = !todayRoutine;
@@ -167,6 +172,14 @@ export default function HomePage() {
       localStorage.setItem('aura_active_user', userId);
     } catch {
       // ignore
+    }
+
+    // Switch active routine to one visible to the new user if needed
+    const nextUserRoutines = routines.filter(
+      (r) => !r.userId || r.userId === 'shared' || r.userId === userId
+    );
+    if (nextUserRoutines.length > 0 && !nextUserRoutines.some((r) => r.id === currentRoutineId)) {
+      setCurrentRoutineId(nextUserRoutines[0].id);
     }
   };
 
@@ -599,22 +612,27 @@ export default function HomePage() {
 
   // Save Routine (Create or Edit)
   const handleSaveRoutine = (savedRoutine: WorkoutRoutine) => {
+    const routineWithUser: WorkoutRoutine = {
+      ...savedRoutine,
+      userId: activeUserId,
+    };
+
     let updatedRoutines: WorkoutRoutine[];
-    const exists = routines.some((r) => r.id === savedRoutine.id);
+    const exists = routines.some((r) => r.id === routineWithUser.id);
 
     if (exists) {
       updatedRoutines = routines.map((r) =>
-        r.id === savedRoutine.id ? savedRoutine : r
+        r.id === routineWithUser.id ? routineWithUser : r
       );
     } else {
-      updatedRoutines = [...routines, savedRoutine];
+      updatedRoutines = [...routines, routineWithUser];
     }
 
     saveRoutines(updatedRoutines);
-    setCurrentRoutineId(savedRoutine.id);
+    setCurrentRoutineId(routineWithUser.id);
 
     try {
-      localStorage.setItem('aura_current_routine_id', savedRoutine.id);
+      localStorage.setItem('aura_current_routine_id', routineWithUser.id);
     } catch {
       // ignore
     }
@@ -629,7 +647,7 @@ export default function HomePage() {
 
   // Delete Routine
   const handleDeleteRoutine = (routineId: string) => {
-    if (routines.length <= 1) {
+    if (visibleRoutines.length <= 1) {
       alert('You must have at least one workout routine.');
       return;
     }
@@ -639,7 +657,10 @@ export default function HomePage() {
     deleteRoutineInCloud(routineId);
 
     if (currentRoutineId === routineId) {
-      const fallbackId = updatedRoutines[0]?.id || DEFAULT_ROUTINES[0].id;
+      const remainingUserRoutines = updatedRoutines.filter(
+        (r) => !r.userId || r.userId === 'shared' || r.userId === activeUserId
+      );
+      const fallbackId = remainingUserRoutines[0]?.id || DEFAULT_ROUTINES[0].id;
       setCurrentRoutineId(fallbackId);
       try {
         localStorage.setItem('aura_current_routine_id', fallbackId);
@@ -894,7 +915,7 @@ export default function HomePage() {
             {activeTab === 'workout' && (
               <WorkoutOverview
                 routine={currentRoutine}
-                allRoutines={routines}
+                allRoutines={visibleRoutines}
                 selectedSummaryRoutineId={selectedSummaryRoutineId}
                 onSelectSummaryRoutine={setSelectedSummaryRoutineId}
                 onSelectRoutine={handleSelectRoutine}

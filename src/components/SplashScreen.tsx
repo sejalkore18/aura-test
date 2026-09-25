@@ -104,7 +104,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
             />
           </div>
           <div className="loader-status">
-            <span className="status-text">INITIALIZING</span>
           </div>
         </div>
       </div>

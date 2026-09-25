@@ -42,7 +42,7 @@ const CompletedExerciseSchema = new Schema<ICompletedExercise>(
   { _id: false }
 );
 
-const WorkoutLogSchema = new Schema<IWorkoutLog>(
+export const WorkoutLogSchema = new Schema<IWorkoutLog>(
   {
     id: { type: String, required: true, unique: true, index: true },
     userId: { type: String, enum: ['sejal', 'bhaumik'], required: true, index: true },
@@ -58,11 +58,23 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
   },
   {
     timestamps: true,
-    collection: 'workout_logs',
   }
 );
 
-export const WorkoutLogModel: Model<IWorkoutLog> =
-  (mongoose.models.WorkoutLog as Model<IWorkoutLog>) ||
-  mongoose.model<IWorkoutLog>('WorkoutLog', WorkoutLogSchema, 'workout_logs');
+// Sejal's workouts collection: sejal_logs
+export const SejalLogModel: Model<IWorkoutLog> =
+  (mongoose.models.SejalLog as Model<IWorkoutLog>) ||
+  mongoose.model<IWorkoutLog>('SejalLog', WorkoutLogSchema, 'sejal_logs');
 
+// Bhaumik's workouts collection: bhaumik_logs
+export const BhaumikLogModel: Model<IWorkoutLog> =
+  (mongoose.models.BhaumikLog as Model<IWorkoutLog>) ||
+  mongoose.model<IWorkoutLog>('BhaumikLog', WorkoutLogSchema, 'bhaumik_logs');
+
+// Default / fallback to user model
+export const WorkoutLogModel: Model<IWorkoutLog> = SejalLogModel;
+
+export function getUserWorkoutLogModel(userId?: string | null): Model<IWorkoutLog> {
+  if (userId === 'bhaumik') return BhaumikLogModel;
+  return SejalLogModel;
+}

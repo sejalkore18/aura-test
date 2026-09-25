@@ -36,6 +36,7 @@ export type DayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
 
 export interface WorkoutRoutine {
   id: string;
+  userId?: 'sejal' | 'bhaumik' | 'shared';
   title: string;
   subtitle?: string;
   estimatedMinutes: number;

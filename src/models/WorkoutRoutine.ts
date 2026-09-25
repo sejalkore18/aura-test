@@ -75,6 +75,9 @@ const WorkoutRoutineSchema = new Schema<IWorkoutRoutine>(
   }
 );
 
-export const WorkoutRoutineModel: Model<IWorkoutRoutine> =
-  (mongoose.models.WorkoutRoutine as Model<IWorkoutRoutine>) ||
-  mongoose.model<IWorkoutRoutine>('WorkoutRoutine', WorkoutRoutineSchema, 'workout_templates');
+export const WorkoutTemplateModel: Model<IWorkoutRoutine> =
+  (mongoose.models.WorkoutTemplate as Model<IWorkoutRoutine>) ||
+  mongoose.model<IWorkoutRoutine>('WorkoutTemplate', WorkoutRoutineSchema, 'workout_templates');
+
+export const WorkoutRoutineModel: Model<IWorkoutRoutine> = WorkoutTemplateModel;
+
