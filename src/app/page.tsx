@@ -27,7 +27,14 @@ import {
   DayKey,
 } from '@/types/workout';
 import { DEFAULT_ROUTINES, getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
-import { INITIAL_WORKOUT_LOGS } from '@/data/mockWorkoutLogs';
+import {
+  syncBatchLogsToCloud,
+  fetchWorkoutLogsFromCloud,
+  syncRoutinesToCloud,
+  fetchRoutinesFromCloud,
+  deleteWorkoutLogInCloud,
+  deleteRoutineInCloud,
+} from '@/lib/syncService';
 
 export default function HomePage() {
   // 0. User Profile State (Sejal and Bhaumik)
@@ -58,7 +65,7 @@ export default function HomePage() {
   const [summaryLog, setSummaryLog] = useState<WorkoutLog | null>(null);
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showAddExercise, setShowAddExercise] = useState<boolean>(false);
-  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(INITIAL_WORKOUT_LOGS);
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
 
   // Template Modal State (Create / Edit Routine)
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState<boolean>(false);
@@ -80,7 +87,7 @@ export default function HomePage() {
   );
   const isRestDay = !todayRoutine;
 
-  // Initialize and load from localStorage
+  // Initialize and load directly from database (with offline cache fallback)
   useEffect(() => {
     try {
       // Load active user profile
@@ -89,17 +96,21 @@ export default function HomePage() {
         setActiveUserId(savedUserId);
       }
 
-      // Load saved logs
+      // Load saved logs, filtering out any legacy mock logs
       const savedLogs = localStorage.getItem('aura_workout_logs');
       if (savedLogs) {
         const parsed = JSON.parse(savedLogs);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setWorkoutLogs(parsed);
+          const nonMockLogs = parsed.filter(
+            (l: WorkoutLog) => !l.id?.startsWith('log_bhaumik_') && !l.id?.startsWith('log_sejal_')
+          );
+          setWorkoutLogs(nonMockLogs);
+          localStorage.setItem('aura_workout_logs', JSON.stringify(nonMockLogs));
         } else {
-          setWorkoutLogs(INITIAL_WORKOUT_LOGS);
+          setWorkoutLogs([]);
         }
       } else {
-        setWorkoutLogs(INITIAL_WORKOUT_LOGS);
+        setWorkoutLogs([]);
       }
 
       // Load routines if customized
@@ -116,6 +127,37 @@ export default function HomePage() {
     } catch {
       // ignore
     }
+
+    // Always fetch the latest data from MongoDB Atlas
+    const syncWithCloud = async () => {
+      try {
+        // 1. Fetch real workout logs from MongoDB
+        const cloudLogs = await fetchWorkoutLogsFromCloud();
+        if (cloudLogs) {
+          setWorkoutLogs(cloudLogs);
+          try {
+            localStorage.setItem('aura_workout_logs', JSON.stringify(cloudLogs));
+          } catch {
+            // ignore
+          }
+        }
+
+        // 2. Fetch routines directly from MongoDB
+        const cloudRoutines = await fetchRoutinesFromCloud();
+        if (cloudRoutines && cloudRoutines.length > 0) {
+          setRoutines(cloudRoutines);
+          try {
+            localStorage.setItem('aura_routines', JSON.stringify(cloudRoutines));
+          } catch {
+            // ignore
+          }
+        }
+      } catch (err) {
+        console.warn('MongoDB sync notice:', err);
+      }
+    };
+
+    syncWithCloud();
   }, []);
 
   // Switch Active User Profile
@@ -128,7 +170,7 @@ export default function HomePage() {
     }
   };
 
-  // Save logs to localStorage
+  // Save logs to localStorage and sync with MongoDB Atlas
   const saveWorkoutLogs = (newLogs: WorkoutLog[]) => {
     setWorkoutLogs(newLogs);
     try {
@@ -136,6 +178,18 @@ export default function HomePage() {
     } catch {
       // ignore
     }
+    syncBatchLogsToCloud(newLogs);
+  };
+
+  // Save routines to localStorage and sync with MongoDB Atlas
+  const saveRoutines = (newRoutines: WorkoutRoutine[]) => {
+    setRoutines(newRoutines);
+    try {
+      localStorage.setItem('aura_routines', JSON.stringify(newRoutines));
+    } catch {
+      // ignore
+    }
+    syncRoutinesToCloud(newRoutines);
   };
 
   // Initialize sets for the active routine if not yet initialized
@@ -526,12 +580,7 @@ export default function HomePage() {
       r.id === currentRoutine.id ? updatedRoutine : r
     );
 
-    setRoutines(updatedRoutines);
-    try {
-      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
-    } catch {
-      // ignore
-    }
+    saveRoutines(updatedRoutines);
   };
 
   // Open Create Template Modal
@@ -561,11 +610,10 @@ export default function HomePage() {
       updatedRoutines = [...routines, savedRoutine];
     }
 
-    setRoutines(updatedRoutines);
+    saveRoutines(updatedRoutines);
     setCurrentRoutineId(savedRoutine.id);
 
     try {
-      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
       localStorage.setItem('aura_current_routine_id', savedRoutine.id);
     } catch {
       // ignore
@@ -587,7 +635,8 @@ export default function HomePage() {
     }
 
     const updatedRoutines = routines.filter((r) => r.id !== routineId);
-    setRoutines(updatedRoutines);
+    saveRoutines(updatedRoutines);
+    deleteRoutineInCloud(routineId);
 
     if (currentRoutineId === routineId) {
       const fallbackId = updatedRoutines[0]?.id || DEFAULT_ROUTINES[0].id;
@@ -602,12 +651,6 @@ export default function HomePage() {
       setCurrentExerciseIndex(0);
       setCurrentSetIndex(0);
       setExerciseProgress({});
-    }
-
-    try {
-      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
-    } catch {
-      // ignore
     }
 
     setIsTemplateModalOpen(false);
@@ -646,12 +689,7 @@ export default function HomePage() {
       r.id === currentRoutine.id ? updatedRoutine : r
     );
 
-    setRoutines(updatedRoutines);
-    try {
-      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
-    } catch {
-      // ignore
-    }
+    saveRoutines(updatedRoutines);
 
     if (exerciseProgress[item.exerciseId]) {
       setExerciseProgress((prev) => ({
@@ -673,12 +711,7 @@ export default function HomePage() {
       r.id === currentRoutine.id ? updatedRoutine : r
     );
 
-    setRoutines(updatedRoutines);
-    try {
-      localStorage.setItem('aura_routines', JSON.stringify(updatedRoutines));
-    } catch {
-      // ignore
-    }
+    saveRoutines(updatedRoutines);
 
     if (currentExerciseIndex >= updatedExercises.length) {
       setCurrentExerciseIndex(Math.max(0, updatedExercises.length - 1));
@@ -686,7 +719,7 @@ export default function HomePage() {
     }
   };
 
-  // Reset day's workout progress
+  // Reset Today's Workout Progress
   const handleResetProgress = () => {
     setIsSessionActive(false);
     setIsPlayerViewOpen(false);
@@ -704,6 +737,7 @@ export default function HomePage() {
   const handleDeleteWorkoutLog = (logId: string) => {
     const updated = workoutLogs.filter((l) => l.id !== logId);
     saveWorkoutLogs(updated);
+    deleteWorkoutLogInCloud(logId);
   };
 
   const currentRoutineExercise =
