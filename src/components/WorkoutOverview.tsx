@@ -69,7 +69,13 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   const [routineToDelete, setRoutineToDelete] = useState<WorkoutRoutine | null>(null);
   // Track routine selected to preview in full-screen summary view
   const [internalSelectedSummaryRoutineId, setInternalSelectedSummaryRoutineId] = useState<string | null>(null);
-  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  const [portalTarget, setPortalTarget] = useState<Element | null>(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth <= 640;
+      return isMobile ? document.body : (document.querySelector('.app-container') || document.body);
+    }
+    return null;
+  });
 
   const selectedSummaryRoutineId =
     propSelectedSummaryRoutineId !== undefined
@@ -135,12 +141,12 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   return (
     <div className="templates-view animate-fade-in">
       {/* Templates List */}
-      <div className="templates-list-container">
+      <div className={`templates-list-container ${allRoutines.length === 0 ? 'is-empty' : ''}`}>
         {allRoutines.length === 0 ? (
-            <button className="btn-primary-pill" onClick={onOpenCreateTemplate}>
-              <Plus size={16} />
-              <span>Create Workout</span>
-            </button>
+          <button className="btn-primary-pill" onClick={onOpenCreateTemplate}>
+            <Plus size={16} />
+            <span>Create Workout</span>
+          </button>
         ) : (
           <div className="templates-cards-grid">
             {allRoutines.map((r) => {
@@ -287,9 +293,12 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
         )}
       </div>
 
-      {/* Floating Action Button — Circular White + */}
-      {allRoutines.length > 0 && (
-        <div className="fab-anchor">
+      {/* Floating Action Button — Circular White + anchored at bottom right */}
+      {allRoutines.length > 0 && !selectedRoutineForSummary && portalTarget && createPortal(
+        <div
+          className="fab-anchor"
+          style={{ position: portalTarget === document.body ? 'fixed' : 'absolute' }}
+        >
           <button
             id="fab-new-workout"
             className="fab-circular-white"
@@ -299,7 +308,8 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           >
             <Plus size={24} strokeWidth={2.6} color="#000000" />
           </button>
-        </div>
+        </div>,
+        portalTarget
       )}
 
       {/* Delete Confirmation Modal Dialog Portaled to App Container for Dead-Center Alignment */}
@@ -569,6 +579,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           flex-direction: column;
           flex: 1;
+          min-height: 100%;
           padding: 18px 20px 28px;
           color: #e4e4e7;
         }
@@ -578,6 +589,15 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           flex-direction: column;
           gap: 16px;
+        }
+
+        .templates-list-container.is-empty {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          min-height: 100%;
         }
 
         .empty-templates-card {
@@ -602,6 +622,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
           display: flex;
           flex-direction: column;
           gap: 16px;
+          padding-bottom: 96px;
         }
 
         /* Template Card */
@@ -954,16 +975,22 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
 
         /* Floating Action Button Anchor & Circular White Button */
         .fab-anchor {
-          position: sticky;
-          bottom: 28px;
-          z-index: 50;
-          height: 0;
-          overflow: visible;
+          position: absolute;
+          bottom: 96px;
+          right: 20px;
+          z-index: 55;
           display: flex;
-          justify-content: flex-end;
-          align-items: flex-end;
+          align-items: center;
+          justify-content: center;
           pointer-events: none;
-          padding-right: 8px;
+        }
+
+        @media (max-width: 640px) {
+          .fab-anchor {
+            position: fixed;
+            bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+            right: 20px;
+          }
         }
 
         .fab-circular-white {
