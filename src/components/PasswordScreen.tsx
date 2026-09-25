@@ -411,7 +411,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
           font-size: 0.95rem;
           font-weight: 700;
           letter-spacing: 0.02em;
-          box-shadow: 0 8px 24px -6px rgba(255, 255, 255, 0.25);
+          box-shadow: none;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -419,7 +419,6 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 
         .submit-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 12px 28px -6px rgba(255, 255, 255, 0.35);
         }
 
         .submit-btn:active:not(:disabled) {
@@ -429,7 +428,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
         .submit-btn.btn-success {
           background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
           color: #ffffff;
-          box-shadow: 0 8px 24px -4px rgba(48, 209, 88, 0.45);
+          box-shadow: none;
         }
 
         .btn-content {
