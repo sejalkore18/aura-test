@@ -124,6 +124,18 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
     };
   }, [portalTarget]);
 
+  const formattedDate = log.createdAt
+    ? new Date(log.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+
   const modalContent = (
     <div
       className="summary-backdrop animate-fade-in"
@@ -139,8 +151,8 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
         </div>
 
         <h1 className="summary-title">Crushed It!</h1>
-        <p className="summary-subtitle">{log.routineTitle}</p>
-        <span className="summary-date">{log.date}</span>
+        <p className="summary-subtitle">{log.workoutTitle}</p>
+        <span className="summary-date">{formattedDate}</span>
 
         {/* Duration Stat */}
         <span className="duration-val">{log.durationMinutes}m</span>

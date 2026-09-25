@@ -19,7 +19,40 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
 }) => {
   const userLogs = logs.filter((l) => !l.userId || l.userId === activeUser.id);
   const totalWorkouts = userLogs.length;
-  const totalVolume = userLogs.reduce((acc, log) => acc + (log.totalVolumeKg || 0), 0);
+
+  const getLogVolume = (log: WorkoutLog) =>
+    log.completedExercises?.reduce(
+      (acc, ex) =>
+        acc +
+        (ex.sets?.reduce(
+          (sAcc, s) => sAcc + (s.reps || 0) * (s.weightKg > 0 ? s.weightKg : 0),
+          0
+        ) || 0),
+      0
+    ) || 0;
+
+  const getLogSets = (log: WorkoutLog) =>
+    log.completedExercises?.reduce((acc, ex) => acc + (ex.sets?.length || 0), 0) || 0;
+
+  const formatLogDate = (log: WorkoutLog) => {
+    if (log.createdAt) {
+      try {
+        const d = new Date(log.createdAt);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return '';
+  };
+
+  const totalVolume = userLogs.reduce((acc, log) => acc + getLogVolume(log), 0);
   const totalMinutes = userLogs.reduce((acc, log) => acc + (log.durationMinutes || 0), 0);
 
   return (
@@ -75,8 +108,8 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                 <div key={log.id} className="log-card">
                   <div className="log-card-header">
                     <div>
-                      <h3 className="log-title">{log.routineTitle}</h3>
-                      <span className="log-date">{log.date}</span>
+                      <h3 className="log-title">{log.workoutTitle}</h3>
+                      <span className="log-date">{formatLogDate(log)}</span>
                     </div>
                     <div className="log-duration-pill">
                       <Clock size={12} />
@@ -87,11 +120,11 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                   <div className="log-metrics-row">
                     <div className="metric-item">
                       <Layers size={13} />
-                      <span>{log.totalSets} sets</span>
+                      <span>{getLogSets(log)} sets</span>
                     </div>
                     <div className="metric-item">
                       <Flame size={13} />
-                      <span>{Math.round(log.totalVolumeKg)} kg lifted</span>
+                      <span>{Math.round(getLogVolume(log))} kg lifted</span>
                     </div>
                   </div>
 

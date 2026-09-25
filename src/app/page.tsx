@@ -496,10 +496,6 @@ export default function HomePage() {
       ? Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000))
       : currentRoutine.estimatedMinutes;
 
-    let totalSets = 0;
-    let totalReps = 0;
-    let totalVolumeKg = 0;
-
     const completedExercisesList: {
       name: string;
       sets: { reps: number; weightKg: number }[];
@@ -514,11 +510,6 @@ export default function HomePage() {
 
       sets.forEach((s) => {
         if (s.completed) {
-          totalSets += 1;
-          totalReps += s.actualReps;
-          // If bodyweight, consider standard benchmark or 0 + added weight
-          const effectiveWeight = s.weightKg > 0 ? s.weightKg : 0;
-          totalVolumeKg += s.actualReps * effectiveWeight;
           loggedSets.push({ reps: s.actualReps, weightKg: s.weightKg });
         }
       });
@@ -531,28 +522,14 @@ export default function HomePage() {
       }
     });
 
-    const now = new Date();
-    const nowYear = now.getFullYear();
-    const nowMonth = String(now.getMonth() + 1).padStart(2, '0');
-    const nowDay = String(now.getDate()).padStart(2, '0');
-    const isoDateStr = `${nowYear}-${nowMonth}-${nowDay}`;
-
     const newLog: WorkoutLog = {
       id: `log_${Date.now()}`,
       userId: activeUserId,
-      routineId: currentRoutine.id,
-      routineTitle: currentRoutine.title,
-      date: now.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-      isoDate: isoDateStr,
+      workoutId: currentRoutine.id,
+      workoutTitle: currentRoutine.title,
       durationMinutes: durationMins,
-      totalSets,
-      totalReps,
-      totalVolumeKg,
       completedExercises: completedExercisesList,
+      createdAt: new Date().toISOString(),
     };
 
     const updatedLogs = [newLog, ...workoutLogs];

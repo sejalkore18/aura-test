@@ -21,7 +21,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 }) => {
   const userLogs = logs.filter((l) => !l.userId || l.userId === activeUser.id);
   const totalWorkouts = userLogs.length;
-  const totalVolume = userLogs.reduce((acc, log) => acc + (log.totalVolumeKg || 0), 0);
+  const totalVolume = userLogs.reduce((acc, log) => {
+    const vol =
+      log.completedExercises?.reduce(
+        (exAcc, ex) =>
+          exAcc +
+          (ex.sets?.reduce(
+            (sAcc, s) => sAcc + (s.reps || 0) * (s.weightKg > 0 ? s.weightKg : 0),
+            0
+          ) || 0),
+        0
+      ) || 0;
+    return acc + vol;
+  }, 0);
   const totalMinutes = userLogs.reduce((acc, log) => acc + (log.durationMinutes || 0), 0);
 
   return (

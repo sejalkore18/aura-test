@@ -13,14 +13,9 @@ export interface ICompletedExercise {
 export interface IWorkoutLog extends Document {
   id: string;
   userId: 'sejal' | 'bhaumik';
-  routineId: string;
-  routineTitle: string;
-  date: string;
-  isoDate?: string;
+  workoutId: string;
+  workoutTitle: string;
   durationMinutes: number;
-  totalSets: number;
-  totalReps: number;
-  totalVolumeKg: number;
   completedExercises: ICompletedExercise[];
   createdAt: Date;
   updatedAt: Date;
@@ -46,14 +41,9 @@ export const WorkoutLogSchema = new Schema<IWorkoutLog>(
   {
     id: { type: String, required: true, unique: true, index: true },
     userId: { type: String, enum: ['sejal', 'bhaumik'], required: true, index: true },
-    routineId: { type: String, required: true },
-    routineTitle: { type: String, required: true },
-    date: { type: String, required: true },
-    isoDate: { type: String, index: true },
+    workoutId: { type: String, required: true },
+    workoutTitle: { type: String, required: true },
     durationMinutes: { type: Number, default: 0 },
-    totalSets: { type: Number, default: 0 },
-    totalReps: { type: Number, default: 0 },
-    totalVolumeKg: { type: Number, default: 0 },
     completedExercises: [CompletedExerciseSchema],
   },
   {

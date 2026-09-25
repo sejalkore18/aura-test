@@ -194,24 +194,46 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   // Selected date defaults to today
   const [selectedDate, setSelectedDate] = useState<string | null>(todayIso);
 
+  const getLogIso = (log: WorkoutLog): string => {
+    if (!log.createdAt) return '';
+    try {
+      const d = new Date(log.createdAt);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    } catch {
+      // ignore
+    }
+    return '';
+  };
+
+  const formatLogDisplayDate = (log: WorkoutLog): string => {
+    if (!log.createdAt) return '';
+    try {
+      const d = new Date(log.createdAt);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+    } catch {
+      // ignore
+    }
+    return '';
+  };
+
   // Build a Set of dates that have workouts for the active user
   const workoutDates = useMemo(() => {
     const dates = new Set<string>();
     userLogs.forEach((log) => {
-      if (log.isoDate) {
-        dates.add(log.isoDate);
-      } else {
-        try {
-          const d = new Date(log.date);
-          if (!isNaN(d.getTime())) {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            dates.add(`${y}-${m}-${day}`);
-          }
-        } catch {
-          // ignore
-        }
+      const iso = getLogIso(log);
+      if (iso) {
+        dates.add(iso);
       }
     });
     return dates;
@@ -220,21 +242,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   // Filter logs for the selected date (or all if selectedDate is null)
   const displayedLogs = useMemo(() => {
     if (!selectedDate) return userLogs;
-    return userLogs.filter((log) => {
-      if (log.isoDate) return log.isoDate === selectedDate;
-      try {
-        const d = new Date(log.date);
-        if (!isNaN(d.getTime())) {
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          return `${y}-${m}-${day}` === selectedDate;
-        }
-      } catch {
-        // ignore
-      }
-      return false;
-    });
+    return userLogs.filter((log) => getLogIso(log) === selectedDate);
   }, [userLogs, selectedDate]);
 
   // Aggregate Stats for the selected day (or all if no date is selected)
@@ -299,6 +307,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               const isPast60Percent =
                 swipingId === log.id && Math.abs(swipeOffset) >= deleteThreshold;
 
+              const logSetsCount =
+                log.completedExercises?.reduce((acc, ex) => acc + (ex.sets?.length || 0), 0) || 0;
+
               return (
                 <div
                   key={log.id}
@@ -353,11 +364,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       <div className="log-title-group">
                         <span
                           className="routine-indicator-pill"
-                          style={{ backgroundColor: getRoutineAccent(log.routineTitle) }}
+                          style={{ backgroundColor: getRoutineAccent(log.workoutTitle) }}
                         />
                         <div>
-                          <h3 className="log-routine-name">{log.routineTitle}</h3>
-                          <span className="log-date">{log.date}</span>
+                          <h3 className="log-routine-name">{log.workoutTitle}</h3>
+                          <span className="log-date">{formatLogDisplayDate(log)}</span>
                         </div>
                       </div>
                       <div className="duration-pill">
@@ -369,7 +380,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     <div className="metrics-row">
                       <div className="metric-chip">
                         <Layers size={13} className="metric-icon-cyan" />
-                        <span>{log.totalSets} sets</span>
+                        <span>{logSetsCount} sets</span>
                       </div>
                     </div>
 

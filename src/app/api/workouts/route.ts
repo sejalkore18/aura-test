@@ -6,6 +6,18 @@ import {
   getUserWorkoutLogModel,
 } from '@/models/WorkoutLog';
 
+function sanitizeWorkoutLog(rawLog: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { date, isoDate, totalSets, totalReps, totalVolumeKg, routineId, routineTitle, ...cleanLog } = rawLog;
+  if (routineId && !cleanLog.workoutId) {
+    cleanLog.workoutId = routineId;
+  }
+  if (routineTitle && !cleanLog.workoutTitle) {
+    cleanLog.workoutTitle = routineTitle;
+  }
+  return cleanLog;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
@@ -15,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     if (userId === 'sejal') {
       const logs = await SejalLogModel.find({})
-        .sort({ createdAt: -1, date: -1 })
+        .sort({ createdAt: -1 })
         .limit(limit)
         .lean();
       return NextResponse.json({ success: true, logs });
@@ -23,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     if (userId === 'bhaumik') {
       const logs = await BhaumikLogModel.find({})
-        .sort({ createdAt: -1, date: -1 })
+        .sort({ createdAt: -1 })
         .limit(limit)
         .lean();
       return NextResponse.json({ success: true, logs });
@@ -31,13 +43,13 @@ export async function GET(request: NextRequest) {
 
     // If no specific userId, query both sejal_logs and bhaumik_logs and merge
     const [sejalLogs, bhaumikLogs] = await Promise.all([
-      SejalLogModel.find({}).sort({ createdAt: -1, date: -1 }).limit(limit).lean(),
-      BhaumikLogModel.find({}).sort({ createdAt: -1, date: -1 }).limit(limit).lean(),
+      SejalLogModel.find({}).sort({ createdAt: -1 }).limit(limit).lean(),
+      BhaumikLogModel.find({}).sort({ createdAt: -1 }).limit(limit).lean(),
     ]);
 
     const combined = [...sejalLogs, ...bhaumikLogs].sort((a, b) => {
-      const timeA = new Date(a.date || (a as { createdAt?: Date }).createdAt || 0).getTime();
-      const timeB = new Date(b.date || (b as { createdAt?: Date }).createdAt || 0).getTime();
+      const timeA = new Date((a as { createdAt?: Date | string }).createdAt || 0).getTime();
+      const timeB = new Date((b as { createdAt?: Date | string }).createdAt || 0).getTime();
       return timeB - timeA;
     });
 
@@ -51,6 +63,16 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const UNSET_FIELDS = {
+  date: 1,
+  isoDate: 1,
+  totalSets: 1,
+  totalReps: 1,
+  totalVolumeKg: 1,
+  routineId: 1,
+  routineTitle: 1,
+};
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
@@ -63,7 +85,10 @@ export async function POST(request: NextRequest) {
         .map((log) => ({
           updateOne: {
             filter: { id: log.id },
-            update: { $set: log },
+            update: {
+              $set: sanitizeWorkoutLog(log),
+              $unset: UNSET_FIELDS,
+            },
             upsert: true,
           },
         }));
@@ -73,14 +98,19 @@ export async function POST(request: NextRequest) {
         .map((log) => ({
           updateOne: {
             filter: { id: log.id },
-            update: { $set: log },
+            update: {
+              $set: sanitizeWorkoutLog(log),
+              $unset: UNSET_FIELDS,
+            },
             upsert: true,
           },
         }));
 
       await Promise.all([
-        sejalOps.length ? SejalLogModel.bulkWrite(sejalOps) : null,
-        bhaumikOps.length ? BhaumikLogModel.bulkWrite(bhaumikOps) : null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sejalOps.length ? SejalLogModel.bulkWrite(sejalOps as any) : null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        bhaumikOps.length ? BhaumikLogModel.bulkWrite(bhaumikOps as any) : null,
       ]);
 
       return NextResponse.json({ success: true, count: body.length });
@@ -97,7 +127,11 @@ export async function POST(request: NextRequest) {
     const userModel = getUserWorkoutLogModel(log.userId);
     const updated = await userModel.findOneAndUpdate(
       { id: log.id },
-      { $set: log },
+      {
+        $set: sanitizeWorkoutLog(log),
+        $unset: UNSET_FIELDS,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       { upsert: true, new: true, runValidators: true }
     );
 

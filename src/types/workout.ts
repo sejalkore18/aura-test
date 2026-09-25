@@ -85,16 +85,13 @@ export const USER_PROFILES: UserProfile[] = [
 export interface WorkoutLog {
   id: string;
   userId: 'sejal' | 'bhaumik';
-  routineId: string;
-  routineTitle: string;
-  date: string;
-  isoDate?: string; // Format: YYYY-MM-DD
+  workoutId: string;
+  workoutTitle: string;
   durationMinutes: number;
-  totalSets: number;
-  totalReps: number;
-  totalVolumeKg: number;
   completedExercises: {
     name: string;
     sets: { reps: number; weightKg: number }[];
   }[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }

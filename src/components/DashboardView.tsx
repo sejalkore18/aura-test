@@ -351,24 +351,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Robust check for workouts completed today
   const now = new Date();
-  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const todayDateStr = now.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 
   const todayLogs = userLogs.filter((log) => {
-    if (log.isoDate && log.isoDate === todayIso) return true;
-    if (log.date === todayDateStr) return true;
-    if (log.date) {
-      const parsed = new Date(log.date);
-      if (!isNaN(parsed.getTime())) {
-        return (
-          parsed.getFullYear() === now.getFullYear() &&
-          parsed.getMonth() === now.getMonth() &&
-          parsed.getDate() === now.getDate()
-        );
+    if (log.createdAt) {
+      try {
+        const parsed = new Date(log.createdAt);
+        if (!isNaN(parsed.getTime())) {
+          return (
+            parsed.getFullYear() === now.getFullYear() &&
+            parsed.getMonth() === now.getMonth() &&
+            parsed.getDate() === now.getDate()
+          );
+        }
+      } catch {
+        // ignore
       }
     }
     return false;
@@ -394,13 +390,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       // Calculate realistic calories burned for this completed workout
       const isCurrent =
         currentRoutine &&
-        (currentRoutine.id === log.routineId ||
-          currentRoutine.title?.toLowerCase() === log.routineTitle?.toLowerCase());
+        (currentRoutine.id === log.workoutId ||
+          currentRoutine.title?.toLowerCase() === log.workoutTitle?.toLowerCase());
       if (isCurrent && currentRoutine.estimatedCalories) {
         todayCaloriesBurned += currentRoutine.estimatedCalories;
       } else {
         const dur = log.durationMinutes || 25;
-        const reps = log.totalReps || 45;
+        const reps =
+          log.completedExercises?.reduce(
+            (acc, ex) =>
+              acc + (ex.sets?.reduce((sAcc, s) => sAcc + (s.reps || 0), 0) || 0),
+            0
+          ) || 45;
         todayCaloriesBurned += Math.round(dur * 8.5 + reps * 0.4);
       }
 
