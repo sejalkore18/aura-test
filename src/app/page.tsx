@@ -16,6 +16,7 @@ import { HistoryView } from '@/components/HistoryView';
 import { ProfileView } from '@/components/ProfileView';
 import { DashboardView } from '@/components/DashboardView';
 import { SplashScreen } from '@/components/SplashScreen';
+import { PasswordScreen } from '@/components/PasswordScreen';
 import {
   WorkoutRoutine,
   WorkoutSet,
@@ -74,6 +75,10 @@ export default function HomePage() {
 
   // App Initial / Refresh Loading Splash Screen State
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Authentication Passcode State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthChecked, setIsAuthChecked] = useState<boolean>(false);
 
   // Filter routines visible to the active user (strictly per user)
   const visibleRoutines = routines.filter(
@@ -135,8 +140,17 @@ export default function HomePage() {
       if (savedRoutineId) {
         setCurrentRoutineId(savedRoutineId);
       }
+
+      // Check authentication passcode status
+      const authStatus = localStorage.getItem('aura_is_authenticated');
+      if (authStatus === 'true') {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setIsAuthChecked(true);
     } catch {
-      // ignore
+      setIsAuthChecked(true);
     }
 
     // Always fetch the latest data from MongoDB Atlas
@@ -806,12 +820,29 @@ export default function HomePage() {
   return (
     <PhoneFrame>
       {/* App Refresh / Initial Loading Splash Screen */}
-      {isLoading && (
+      {(isLoading || !isAuthChecked) && (
         <SplashScreen onComplete={() => setIsLoading(false)} />
       )}
 
-      {/* Universal Top AppBar (shown on sub-tabs & player view, hidden on root dashboard) */}
-      {(isPlayerViewOpen || activeTab !== 'dashboard') && (
+      {/* Password Gate Screen (shown for unauthenticated first-time visitors) */}
+      {!isLoading && isAuthChecked && !isAuthenticated && (
+        <PasswordScreen
+          onAuthenticated={() => {
+            try {
+              localStorage.setItem('aura_is_authenticated', 'true');
+            } catch {
+              // ignore
+            }
+            setIsAuthenticated(true);
+          }}
+        />
+      )}
+
+      {/* Main Authenticated Application Views */}
+      {!isLoading && isAuthChecked && isAuthenticated && (
+        <>
+          {/* Universal Top AppBar (shown on sub-tabs & player view, hidden on root dashboard) */}
+          {(isPlayerViewOpen || activeTab !== 'dashboard') && (
         <AppBar
           title={getAppBarTitle()}
           subtitle={getAppBarSubtitle()}
@@ -1004,6 +1035,8 @@ export default function HomePage() {
         onSave={handleSaveRoutine}
         onDelete={handleDeleteRoutine}
       />
+        </>
+      )}
 
       <style jsx>{`
         .player-viewport {
