@@ -20,7 +20,7 @@ export interface IRoutineExercise {
 
 export interface IWorkoutRoutine extends Document {
   id: string;
-  userId?: 'sejal' | 'bhaumik' | 'shared';
+  userId?: 'sejal' | 'bhaumik';
   title: string;
   subtitle?: string;
   estimatedMinutes: number;
@@ -59,7 +59,7 @@ const RoutineExerciseSchema = new Schema<IRoutineExercise>(
 const WorkoutRoutineSchema = new Schema<IWorkoutRoutine>(
   {
     id: { type: String, required: true, unique: true, index: true },
-    userId: { type: String, enum: ['sejal', 'bhaumik', 'shared'], default: 'shared', index: true },
+    userId: { type: String, enum: ['sejal', 'bhaumik'], required: true, index: true },
     title: { type: String, required: true },
     subtitle: { type: String },
     estimatedMinutes: { type: Number, default: 25 },

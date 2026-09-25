@@ -11,14 +11,24 @@ export async function GET(request: NextRequest) {
 
     const query: Record<string, unknown> = {};
     if (userId) {
-      query.$or = [{ userId }, { userId: 'shared' }, { userId: { $exists: false } }];
+      query.userId = userId;
     }
 
     let routines = await WorkoutRoutineModel.find(query).lean();
 
-    // If the database has no routines yet, seed default templates to MongoDB
+    // If the database has no routines yet, seed default templates for the user(s)
     if (routines.length === 0) {
-      const defaultDocs = DEFAULT_ROUTINES.map((r) => ({ ...r, userId: 'shared' }));
+      const targetUsers: ('sejal' | 'bhaumik')[] = userId && (userId === 'sejal' || userId === 'bhaumik')
+        ? [userId]
+        : ['sejal', 'bhaumik'];
+
+      const defaultDocs = targetUsers.flatMap((u) =>
+        DEFAULT_ROUTINES.map((r) => ({
+          ...r,
+          id: `${u}_${r.id}`,
+          userId: u,
+        }))
+      );
       await WorkoutRoutineModel.insertMany(defaultDocs);
       routines = await WorkoutRoutineModel.find(query).lean();
     }

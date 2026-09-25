@@ -137,15 +137,10 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
       {/* Templates List */}
       <div className="templates-list-container">
         {allRoutines.length === 0 ? (
-          <div className="empty-templates-card">
-            <Dumbbell size={40} className="empty-icon" />
-            <h3>No Workout Templates</h3>
-            <p>Create your first workout template to start training.</p>
             <button className="btn-primary-pill" onClick={onOpenCreateTemplate}>
               <Plus size={16} />
-              <span>Create Workout Template</span>
+              <span>Create Workout</span>
             </button>
-          </div>
         ) : (
           <div className="templates-cards-grid">
             {allRoutines.map((r) => {
@@ -463,17 +458,15 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                   <Edit3 size={15} />
                 </button>
 
-                {allRoutines.length > 1 && (
-                  <button
-                    type="button"
-                    className="btn-card-action btn-delete-action"
-                    onClick={() => setRoutineToDelete(selectedRoutineForSummary)}
-                    title="Delete template"
-                    aria-label="Delete template"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="btn-card-action btn-delete-action"
+                  onClick={() => setRoutineToDelete(selectedRoutineForSummary)}
+                  title="Delete template"
+                  aria-label="Delete template"
+                >
+                  <Trash2 size={15} />
+                </button>
               </div>
             </div>
 
