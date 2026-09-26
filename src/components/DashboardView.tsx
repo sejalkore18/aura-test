@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ArrowRight, Play, Activity } from 'lucide-react';
+import { ArrowRight, Play, Activity, Check } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
 import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 
@@ -370,6 +370,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return false;
   });
 
+  const isWorkoutCompletedToday = todayLogs.length > 0;
+
   // Dynamic activity items and calories calculation for workout done today
   interface TodayActivityExercise {
     id: string;
@@ -620,12 +622,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. "Workout Progress" Banner Card (Deep Charcoal Hero Card) */}
       <section
-        className={`workout-progress-card ${isExiting ? 'card-fade-out' : 'animate-card-fade'} ${isRestDay && !isWorkoutInProgress ? 'workout-progress-card--rest' : ''}`}
+        className={`workout-progress-card ${isExiting ? 'card-fade-out' : 'animate-card-fade'} ${
+          isWorkoutInProgress
+            ? ''
+            : isWorkoutCompletedToday
+            ? 'workout-progress-card--completed'
+            : isRestDay
+            ? 'workout-progress-card--rest'
+            : ''
+        }`}
         key={`workout-${activeUser.id}`}
         onClick={onGoToWorkoutTab}
         role="button"
         tabIndex={0}
-        aria-label={isRestDay && !isWorkoutInProgress ? "Rest day - view workouts" : "View workout page"}
+        aria-label={
+          isWorkoutInProgress
+            ? "Workout in progress"
+            : isWorkoutCompletedToday
+            ? "Workout completed for today"
+            : isRestDay
+            ? "Rest day - view workouts"
+            : "View workout page"
+        }
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -637,21 +655,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="progress-text-block">
             <h2 className="progress-title">Today&apos;s Workout</h2>
             <p className="progress-subtitle">
-              {isRestDay && !isWorkoutInProgress
-                ? 'Rest & recover 🛋️'
-                : isWorkoutInProgress
+              {isWorkoutInProgress
                 ? isAllCompleted
                   ? 'All exercises completed! 🎉'
                   : `${exercisesLeft} exercise${exercisesLeft === 1 ? '' : 's'} left`
+                : isWorkoutCompletedToday
+                ? 'Workout completed for today! 🎉'
+                : isRestDay
+                ? 'Rest & recover 🛋️'
                 : `${currentRoutine.title} · ~${currentRoutine.estimatedMinutes} min`}
             </p>
           </div>
 
-          {isRestDay && !isWorkoutInProgress ? (
-            <div className="rest-day-icon" aria-hidden="true">
-              🌙
-            </div>
-          ) : isWorkoutInProgress ? (
+          {isWorkoutInProgress ? (
             <div className="progress-ring-box">
               {renderProgressRing(
                 calculatedPercent,
@@ -662,6 +678,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 '#e4e4e7',
                 8
               )}
+            </div>
+          ) : isWorkoutCompletedToday ? (
+            <div className="completed-badge" aria-hidden="true">
+              <Check size={20} strokeWidth={2.8} />
+            </div>
+          ) : isRestDay ? (
+            <div className="rest-day-icon" aria-hidden="true">
+              🌙
             </div>
           ) : (
             <div className="start-play-trigger" title="Start Workout">
@@ -1135,6 +1159,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         .workout-progress-card--rest .progress-subtitle {
           color: #6b7280;
+        }
+
+        .workout-progress-card--completed {
+          cursor: pointer;
+          background: rgba(18, 20, 28, 0.75);
+          border-color: rgba(10, 132, 255, 0.28);
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+        }
+
+        .workout-progress-card--completed:hover {
+          border-color: rgba(10, 132, 255, 0.45);
+          background: rgba(22, 26, 36, 0.85);
+          box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.7);
+        }
+
+        .workout-progress-card--completed .progress-title {
+          color: #e4e4e7;
+        }
+
+        .workout-progress-card--completed .progress-subtitle {
+          color: #60a5fa;
+          font-weight: 500;
+        }
+
+        .completed-badge {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(10, 132, 255, 0.12);
+          border: 1.5px solid rgba(10, 132, 255, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #0a84ff;
+          box-shadow: none;
+          flex-shrink: 0;
         }
 
         .rest-day-icon {
