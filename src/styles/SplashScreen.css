@@ -91,8 +91,6 @@
 .splash-logo-img {
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 0 14px rgba(0, 210, 255, 0.4)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.3));
-  animation: logoSheen 2.5s ease-in-out infinite;
 }
 
 /* Typography */
@@ -112,6 +110,7 @@
   margin-right: -0.28em; /* Offset trailing letter-spacing */
   background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 35%, #93c5fd 65%, #c084fc 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
 }
@@ -236,14 +235,6 @@
   }
 }
 
-@keyframes logoSheen {
-  0%, 100% {
-    filter: drop-shadow(0 0 12px rgba(0, 210, 255, 0.4)) drop-shadow(0 0 18px rgba(168, 85, 247, 0.3));
-  }
-  50% {
-    filter: drop-shadow(0 0 18px rgba(0, 210, 255, 0.65)) drop-shadow(0 0 26px rgba(168, 85, 247, 0.5));
-  }
-}
 
 @keyframes dotBlink {
   0%, 100% {
