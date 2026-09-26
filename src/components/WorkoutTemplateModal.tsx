@@ -504,7 +504,7 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
 
     const firstExId = exercises[0]?.exerciseId;
     const firstEx = firstExId ? getExerciseById(firstExId) : null;
-    const coverImage = firstEx?.thumbnailUrl || initialRoutine?.coverImage || '/workouts/upper-body.jpg';
+    const coverImage = firstEx?.thumbnailUrl || initialRoutine?.coverImage || EXERCISE_LIBRARY[0]?.thumbnailUrl || '';
 
     const savedRoutine: WorkoutRoutine = {
       id: routineId,

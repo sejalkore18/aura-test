@@ -17,13 +17,5 @@ export function getRoutineCoverImage(routine: WorkoutRoutine): string {
   }
 
   // 2. Fallbacks if routine has no exercises yet
-  if (routine.coverImage) return routine.coverImage;
-  const text = `${routine.id} ${routine.title}`.toLowerCase();
-  if (text.includes('lower') || text.includes('leg') || text.includes('squat')) {
-    return '/workouts/lower-body.jpg';
-  }
-  if (text.includes('upper') || text.includes('chest') || text.includes('push') || text.includes('arm') || text.includes('dip') || text.includes('bench')) {
-    return '/workouts/upper-body.jpg';
-  }
-  return '/workouts/full-body.jpg';
+  return routine.coverImage || EXERCISE_LIBRARY[0]?.thumbnailUrl || '';
 }
