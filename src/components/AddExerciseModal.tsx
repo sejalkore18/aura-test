@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { X, Plus, Search, Dumbbell } from 'lucide-react';
+import { X, Plus, Search } from 'lucide-react';
 import { Exercise, RoutineExercise } from '@/types/workout';
 import { EXERCISE_LIBRARY } from '@/data/exercises';
 

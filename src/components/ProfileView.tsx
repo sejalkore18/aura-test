@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UserProfile, WorkoutLog, USER_PROFILES } from '@/types/workout';
+import { UserProfile, WorkoutLog } from '@/types/workout';
 import { Award, Flame, Clock, Layers, Shield, Check, Trash2 } from 'lucide-react';
 
 interface ProfileViewProps {

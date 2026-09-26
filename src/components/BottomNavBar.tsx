@@ -17,8 +17,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onSelectTab,
   activeUser,
 }) => {
-  const isDashboard = activeTab === 'dashboard';
-
   const tabs = [
     {
       id: 'dashboard' as NavTab,

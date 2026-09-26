@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import {
   ArrowLeft,
-  X,
   Plus,
   Minus,
   Trash2,
@@ -15,11 +14,10 @@ import {
   Layers,
   Search,
   Check,
-  Sparkles,
   AlertTriangle,
   Flame,
 } from 'lucide-react';
-import { WorkoutRoutine, RoutineExercise, Exercise, DayKey } from '@/types/workout';
+import { WorkoutRoutine, RoutineExercise, DayKey } from '@/types/workout';
 import { EXERCISE_LIBRARY, getExerciseById } from '@/data/exercises';
 
 interface WorkoutTemplateModalProps {
@@ -45,7 +43,6 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
   initialRoutine,
   onClose,
   onSave,
-  onDelete,
 }) => {
   const [title, setTitle] = useState('');
   const [exercises, setExercises] = useState<(RoutineExercise & { _uid?: string })[]>([]);
@@ -319,11 +316,6 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     window.addEventListener('pointermove', onPointerMove, { passive: false });
     window.addEventListener('pointerup', onPointerUp, { passive: false });
     window.addEventListener('pointercancel', onPointerUp, { passive: false });
-  };
-
-  // Remove exercise from sequence
-  const handleRemoveExercise = (index: number) => {
-    setExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Swipe-to-delete trigger with smooth exit animation

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PhoneFrame } from '@/components/PhoneFrame';
 import { WorkoutOverview } from '@/components/WorkoutOverview';
 import { ActiveWorkoutPlayer } from '@/components/ActiveWorkoutPlayer';
@@ -312,11 +312,9 @@ export default function HomePage() {
 
   // Start directly from a specific exercise clicked in overview
   const handleSelectExerciseToStart = (exerciseIndex: number, targetRoutineId?: string) => {
-    let activeRoutine = currentRoutine;
     if (targetRoutineId && targetRoutineId !== currentRoutineId) {
       const found = routines.find((r) => r.id === targetRoutineId);
       if (found) {
-        activeRoutine = found;
         setCurrentRoutineId(targetRoutineId);
         try {
           localStorage.setItem('aura_current_routine_id', targetRoutineId);

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ArrowRight, Play, Activity, Check } from 'lucide-react';
+import { Play, Activity, Check } from 'lucide-react';
 import { UserProfile, WorkoutRoutine, WorkoutLog, Exercise } from '@/types/workout';
 import { getExerciseById, EXERCISE_LIBRARY } from '@/data/exercises';
 
@@ -113,18 +113,14 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   activeUser,
-  allUsers,
   onSwitchUser,
   currentRoutine,
   isRestDay = false,
   isSessionActive,
   completedExerciseIds,
   workoutLogs,
-  onStartWorkout,
-  onSelectExercise,
   onOpenExerciseDetails,
   onGoToWorkoutTab,
-  onGoToHistoryTab,
   onRefresh,
 }) => {
   // Pull to refresh state

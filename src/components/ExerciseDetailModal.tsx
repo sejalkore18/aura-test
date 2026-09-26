@@ -14,7 +14,6 @@ interface ExerciseDetailModalProps {
 export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
   exercise,
   onClose,
-  onStartExerciseNow,
 }) => {
   const [portalTarget, setPortalTarget] = useState<Element | null>(null);
 

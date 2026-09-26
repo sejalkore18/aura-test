@@ -2,14 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  ArrowLeft,
   SkipBack,
   SkipForward,
   Check,
   Plus,
   Minus,
   Info,
-  Play,
   Dumbbell
 } from 'lucide-react';
 import { Exercise, WorkoutSet, WorkoutRoutine } from '@/types/workout';
@@ -42,7 +40,6 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
   routine,
   sets,
   currentSetIndex,
-  onBackToOverview,
   onSetChange,
   onUpdateSet,
   onAddSet,
@@ -64,7 +61,6 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
   const [reps, setReps] = useState<number>(currentSet.actualReps || currentSet.targetReps);
   const [weightKg, setWeightKg] = useState<number>(currentSet.weightKg || 0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(false);
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState<boolean>(false);
   const [isEditingWeight, setIsEditingWeight] = useState<boolean>(false);
   const [isFinishing, setIsFinishing] = useState<boolean>(false);
@@ -85,7 +81,6 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
   // Reset video and finishing state whenever exercise changes
   useEffect(() => {
-    setIsVideoPlaying(false);
     setIsFinishing(false);
     if (videoRef.current) {
       videoRef.current.pause();
@@ -160,17 +155,12 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
     if (video.paused) {
       const playPromise = video.play();
       if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsVideoPlaying(true);
-          })
-          .catch((err) => {
-            console.warn('Video play interrupted:', err);
-          });
+        playPromise.catch((err) => {
+          console.warn('Video play interrupted:', err);
+        });
       }
     } else {
       video.pause();
-      setIsVideoPlaying(false);
     }
   };
 
@@ -207,8 +197,6 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           playsInline
           preload="auto"
           className="exercise-video-bg"
-          onPlay={() => setIsVideoPlaying(true)}
-          onPause={() => setIsVideoPlaying(false)}
         />
 
         {/* Video Vignette & Readable Gradient Overlay */}

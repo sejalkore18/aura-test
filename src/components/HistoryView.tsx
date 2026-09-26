@@ -43,7 +43,6 @@ const getChipDotColor = (idx: number): string => {
 export const HistoryView: React.FC<HistoryViewProps> = ({
   logs,
   activeUser,
-  onClearHistory,
   onDeleteLog,
   onGoToWorkouts,
 }) => {

@@ -14,7 +14,6 @@ interface WorkoutSummaryModalProps {
 
 export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   log,
-  activeUser,
   onClose,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

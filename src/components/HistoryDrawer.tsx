@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Calendar, Clock, Layers, Flame, Trash2, Award } from 'lucide-react';
+import { X, Calendar, Clock, Layers, Flame, Trash2 } from 'lucide-react';
 import { WorkoutLog, UserProfile } from '@/types/workout';
 
 interface HistoryDrawerProps {

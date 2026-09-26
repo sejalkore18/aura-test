@@ -9,7 +9,6 @@ interface CalendarStripProps {
   onSelectDate: (dateStr: string | null) => void;
 }
 
-const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS_FULL = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'

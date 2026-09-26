@@ -10,16 +10,14 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
-  Sparkles,
   Dumbbell,
-  CheckCircle2,
   ArrowLeft,
   Clock,
   Flame,
   Layers,
   CalendarDays,
 } from 'lucide-react';
-import { WorkoutRoutine, RoutineExercise, Exercise } from '@/types/workout';
+import { WorkoutRoutine, Exercise } from '@/types/workout';
 import { getExerciseById, getRoutineCoverImage } from '@/data/exercises';
 
 interface WorkoutOverviewProps {
@@ -55,9 +53,7 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
   onSelectSummaryRoutine,
   onSelectRoutine,
   onStartWorkout,
-  onSelectExerciseToStart,
   onOpenExerciseDetails,
-  onOpenHistory,
   isSessionActive,
   onOpenCreateTemplate,
   onOpenEditTemplate,
