@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import './globals.css';
-import StyledJsxRegistry from './registry';
+import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'Aura Fitness – Daily Workout & Set Tracker',
@@ -49,7 +48,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cdn.prod.website-files.com" crossOrigin="anonymous" />
       </head>
       <body>
-        <StyledJsxRegistry>{children}</StyledJsxRegistry>
+        {children}
       </body>
     </html>
   );
