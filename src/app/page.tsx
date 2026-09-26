@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import '@/styles/page.css';
 import { PhoneFrame } from '@/components/PhoneFrame';
 import { WorkoutOverview } from '@/components/WorkoutOverview';
 import { ActiveWorkoutPlayer } from '@/components/ActiveWorkoutPlayer';
@@ -1035,45 +1036,6 @@ export default function HomePage() {
       />
         </>
       )}
-
-      <style jsx>{`
-        .player-viewport {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .tab-layout-wrapper {
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-          min-height: 0;
-          height: 100%;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .tab-scroll-viewport {
-          flex: 1;
-          overflow-y: auto;
-          overflow-x: hidden;
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-
-        .tab-scroll-viewport::-webkit-scrollbar {
-          display: none;
-          width: 0;
-          height: 0;
-        }
-      `}</style>
     </PhoneFrame>
   );
 }

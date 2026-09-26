@@ -1,0 +1,81 @@
+.footer-nav-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  flex-shrink: 0;
+  padding: 8px 16px 14px;
+  margin-top: auto;
+  background: rgba(14, 14, 18, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-items-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.nav-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px 12px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  min-width: 56px;
+}
+
+.nav-tab-btn:hover {
+  color: #e4e4e7;
+}
+
+.nav-tab-btn.active {
+  color: #e4e4e7;
+}
+
+.icon-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+
+.avatar-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #e4e4e7;
+  transition: transform 0.2s ease;
+}
+
+.nav-tab-btn.active .avatar-icon {
+  transform: scale(1.1);
+}
+
+.tab-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-family: var(--font-body);
+}
+
+.nav-tab-btn.active .tab-label {
+  color: #e4e4e7;
+}

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { Trophy } from 'lucide-react';
 import { WorkoutLog, UserProfile } from '@/types/workout';
+import '@/styles/WorkoutSummaryModal.css';
 
 interface WorkoutSummaryModalProps {
   log: WorkoutLog;
@@ -161,98 +162,6 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
           <span>Go to Home</span>
         </button>
       </div>
-
-      <style jsx>{`
-        .summary-backdrop {
-          inset: 0;
-          z-index: 9999;
-          background: rgba(0, 0, 0, 0.9);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          overflow: hidden;
-        }
-
-        .confetti-canvas {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
-          z-index: 25;
-        }
-
-        .summary-card {
-          position: relative;
-          z-index: 10;
-          width: 100%;
-          max-width: 380px;
-          background: #141418;
-          border: 1px solid var(--border-active);
-          border-radius: 28px;
-          padding: 28px 24px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
-        }
-
-        .trophy-badge {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 16px;
-        }
-
-        :global(.trophy-icon) {
-          color: #ffdf00;
-        }
-
-        .summary-title {
-          font-size: 1.6rem;
-          font-weight: 800;
-          color: #e4e4e7;
-          margin-bottom: 10px;
-        }
-
-        .summary-subtitle {
-          font-size: 0.95rem;
-          color: var(--text-secondary);
-          margin-bottom: 8px;
-        }
-
-        .summary-date {
-          display: inline-block;
-          font-size: 0.75rem;
-          color: var(--text-muted);
-          margin-bottom: 24px;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-        }
-
-        .duration-val {
-          display: inline-block;
-          font-family: var(--font-display);
-          font-size: 1.85rem;
-          font-weight: 800;
-          color: #e4e4e7;
-          margin-bottom: 28px;
-          letter-spacing: -0.02em;
-        }
-
-        .finish-btn {
-          width: 100%;
-          box-shadow: none !important;
-        }
-
-        .finish-btn:hover {
-          box-shadow: none !important;
-        }
-      `}</style>
     </div>
   );
 
