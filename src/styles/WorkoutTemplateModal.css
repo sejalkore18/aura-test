@@ -22,9 +22,12 @@
   }
 }
 
+.template-page-view .page-header,
+.picker-screen-view .page-header,
 .page-header {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   height: 56px;
   padding: 0 16px;
   background: rgba(8, 8, 10, 0.95);
@@ -340,6 +343,8 @@
   gap: 14px;
 }
 
+.template-page-view .swipe-card-wrapper,
+.picker-screen-view .swipe-card-wrapper,
 .swipe-card-wrapper {
   position: relative;
   overflow: hidden;
@@ -418,6 +423,8 @@
   stroke: #9ca3af !important;
 }
 
+.template-page-view .exercise-config-card,
+.picker-screen-view .exercise-config-card,
 .exercise-config-card {
   background: #141419;
   border: 1px solid rgba(255, 255, 255, 0.08);

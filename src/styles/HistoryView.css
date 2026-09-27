@@ -24,6 +24,8 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
+  width: 100%;
+  box-sizing: border-box;
   padding: 16px 20px;
   background: rgba(22, 22, 28, 0.75);
   backdrop-filter: blur(16px);
@@ -89,10 +91,15 @@
 }
 
 /* 4. Logs Timeline */
-.logs-container {
+.history-view .logs-container {
   flex: 1;
   display: flex;
   flex-direction: column;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 @keyframes dateContentSlideFade {
@@ -106,10 +113,12 @@
   }
 }
 
-.logs-animated-content {
+.history-view .logs-animated-content {
   display: flex;
   flex-direction: column;
   flex: 1;
+  width: 100%;
+  box-sizing: border-box;
   animation: dateContentSlideFade 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -152,19 +161,23 @@
 }
 
 /* Logs List & Swipe to Delete */
-.logs-list {
+.history-view .logs-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.swipe-card-wrapper {
+.history-view .swipe-card-wrapper {
   position: relative;
   overflow: hidden;
   border-radius: 26px;
   max-height: 360px;
   opacity: 1;
   background: transparent;
+  width: 100%;
+  box-sizing: border-box;
   transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               opacity 0.2s ease,
               margin-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -236,7 +249,9 @@
   stroke: #9ca3af !important;
 }
 
-.log-card {
+.history-view .log-card {
+  width: 100%;
+  box-sizing: border-box;
   background: rgba(22, 22, 28, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
