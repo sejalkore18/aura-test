@@ -812,7 +812,7 @@ export default function HomePage() {
       case 'history':
         return undefined;
       case 'profile':
-        return 'Athlete Stats';
+        return undefined;
     }
   };
 
@@ -850,9 +850,9 @@ export default function HomePage() {
           activeUser={activeUser}
           allUsers={USER_PROFILES}
           onSwitchUser={handleSwitchUser}
-          showUserSwitcher={!['history', 'workout', 'library'].includes(activeTab) && !isPlayerViewOpen}
-          transparentBackButton={['history', 'workout', 'library'].includes(activeTab)}
-          titlePosition={['history', 'workout', 'library'].includes(activeTab) ? 'left' : 'center'}
+          showUserSwitcher={!['history', 'workout', 'library', 'profile'].includes(activeTab) && !isPlayerViewOpen}
+          transparentBackButton={['history', 'workout', 'library', 'profile'].includes(activeTab)}
+          titlePosition={['history', 'workout', 'library', 'profile'].includes(activeTab) ? 'left' : 'center'}
         />
       )}
 
