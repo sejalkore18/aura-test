@@ -386,23 +386,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   if (todayLogs.length > 0) {
     // 1. From completed workout(s) logged today
     todayLogs.forEach((log) => {
-      // Calculate realistic calories burned for this completed workout
-      const isCurrent =
-        currentRoutine &&
-        (currentRoutine.id === log.workoutId ||
-          currentRoutine.title?.toLowerCase() === log.workoutTitle?.toLowerCase());
-      if (isCurrent && currentRoutine.estimatedCalories) {
-        todayCaloriesBurned += currentRoutine.estimatedCalories;
-      } else {
-        const dur = log.durationMinutes || 25;
-        const reps =
-          log.completedExercises?.reduce(
-            (acc, ex) =>
-              acc + (ex.sets?.reduce((sAcc, s) => sAcc + (s.reps || 0), 0) || 0),
-            0
-          ) || 45;
-        todayCaloriesBurned += Math.round(dur * 8.5 + reps * 0.4);
+      // Calculate realistic calories burned purely from exercise workload (sets, reps, weight)
+      // Time expenditure is removed so calories directly reflect physical work done
+      let workloadBurn = 0;
+      let totalSetsCount = 0;
+
+      (log.completedExercises || []).forEach((ex) => {
+        (ex.sets || []).forEach((set) => {
+          totalSetsCount++;
+          const reps = Math.max(0, set.reps || 0);
+          const weight = Math.max(0, set.weightKg || 0);
+
+          if (weight > 0) {
+            // External weight work: 0.8 kcal base per rep + (reps * weightKg * 0.015) kcal
+            workloadBurn += reps * (0.8 + weight * 0.015);
+          } else {
+            // Bodyweight exercise work: 1.0 kcal per rep
+            workloadBurn += reps * 1.0;
+          }
+        });
+      });
+
+      // Fallback if sets were not detailed: estimate based on standard sets (~15 kcal per set)
+      if (totalSetsCount === 0) {
+        const estSets = (log.completedExercises?.length || 4) * 3;
+        workloadBurn = estSets * 15;
       }
+
+      todayCaloriesBurned += Math.round(workloadBurn);
 
       // Collect all completed exercises with actual sets & reps
       (log.completedExercises || []).forEach((ce, idx) => {
@@ -450,7 +461,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       });
 
     const totalRoutineEx = currentRoutine.exercises?.length || 1;
-    const baseRoutineCal = currentRoutine.estimatedCalories || 280;
+    let plannedRoutineCal = 0;
+    currentRoutine.exercises.forEach((ex) => {
+      const setsCount = typeof ex.sets === 'number' ? ex.sets : ex.targetSets || 3;
+      const reps = ex.targetReps || 10;
+      const weight = ex.targetWeightKg || 0;
+      if (weight > 0) {
+        plannedRoutineCal += setsCount * reps * (0.8 + weight * 0.015);
+      } else {
+        plannedRoutineCal += setsCount * reps * 1.0;
+      }
+    });
+
+    const baseRoutineCal =
+      currentRoutine.estimatedCalories || Math.round(plannedRoutineCal || 200);
     todayCaloriesBurned = Math.round(
       (completedExerciseIds.length / totalRoutineEx) * baseRoutineCal
     );
@@ -458,12 +482,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const hasActivityToday = dynamicActivityItems.length > 0 || todayLogs.length > 0;
 
-  // Format calories nicely (e.g. 380, or 1.350 / 1,350 if >= 1000)
+  // Format calories nicely with standard thousands separator (e.g. 380, 1,350)
   const formattedCalories =
-    todayCaloriesBurned >= 1000
-      ? (todayCaloriesBurned / 1000).toFixed(3)
-      : todayCaloriesBurned > 0
-      ? String(todayCaloriesBurned)
+    todayCaloriesBurned > 0
+      ? todayCaloriesBurned.toLocaleString('en-US')
       : '0';
 
   // Helper for circular SVG progress rings with mathematically centered percentage text

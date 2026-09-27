@@ -151,7 +151,15 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
               const isExpanded = expandedRoutineId === r.id;
               const totalMovements = r.exercises?.length || 0;
               const estimatedCalories =
-                r.estimatedCalories ?? Math.round((r.estimatedMinutes || 25) * 4);
+                r.estimatedCalories ??
+                Math.round(
+                  r.exercises?.reduce((acc, ex) => {
+                    const sets = typeof ex.sets === 'number' ? ex.sets : ex.targetSets || 3;
+                    const reps = ex.targetReps || 10;
+                    const weight = ex.targetWeightKg || 0;
+                    return acc + sets * reps * (weight > 0 ? 0.8 + weight * 0.015 : 1.0);
+                  }, 0) || (r.exercises?.length || 5) * 45
+                );
 
               return (
                 <div
@@ -405,7 +413,14 @@ export const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({
                   <Flame size={13} className="chip-icon icon-orange" />
                   <span>
                     {selectedRoutineForSummary.estimatedCalories ??
-                      Math.round((selectedRoutineForSummary.estimatedMinutes || 25) * 4)}{' '}
+                      Math.round(
+                        selectedRoutineForSummary.exercises?.reduce((acc, ex) => {
+                          const sets = typeof ex.sets === 'number' ? ex.sets : ex.targetSets || 3;
+                          const reps = ex.targetReps || 10;
+                          const weight = ex.targetWeightKg || 0;
+                          return acc + sets * reps * (weight > 0 ? 0.8 + weight * 0.015 : 1.0);
+                        }, 0) || (selectedRoutineForSummary.exercises?.length || 5) * 45
+                      )}{' '}
                     cal
                   </span>
                 </div>

@@ -506,11 +506,24 @@ export const WorkoutTemplateModal: React.FC<WorkoutTemplateModalProps> = ({
     const firstEx = firstExId ? getExerciseById(firstExId) : null;
     const coverImage = firstEx?.thumbnailUrl || initialRoutine?.coverImage || EXERCISE_LIBRARY[0]?.thumbnailUrl || '';
 
+    // Calculate estimated calories purely from planned exercise volume (sets, reps, weight) without time
+    let plannedCal = 0;
+    exercises.forEach((ex) => {
+      const setsCount = typeof ex.sets === 'number' ? ex.sets : ex.targetSets || 3;
+      const reps = ex.targetReps || 10;
+      const weight = ex.targetWeightKg || 0;
+      if (weight > 0) {
+        plannedCal += setsCount * reps * (0.8 + weight * 0.015);
+      } else {
+        plannedCal += setsCount * reps * 1.0;
+      }
+    });
+
     const savedRoutine: WorkoutRoutine = {
       id: routineId,
       title: title.trim(),
       estimatedMinutes,
-      estimatedCalories: Math.round(estimatedMinutes * 4),
+      estimatedCalories: Math.round(plannedCal || totalSets * 15),
       exercises: exercises.map(({ _uid, ...rest }) => ({
         ...rest,
         sets: typeof rest.sets === 'number' ? rest.sets : rest.targetSets,
