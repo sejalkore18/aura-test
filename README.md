@@ -18,7 +18,7 @@
 
 ## 📖 Overview
 
-**Aura** is a modern, high-performance fitness web application and Progressive Web App (PWA) designed to replace clunky gym notebooks and ad-cluttered tracking apps. Inspired by sleek mobile experiences, Aura provides real-time set logging, rich looping 3D exercise demonstrations and  workload-based calorie burnt calculations.
+**Aura** is a modern, high-performance fitness PWA designed to replace clunky gym notebooks and ad-cluttered tracking apps. Inspired by sleek mobile experiences, Aura provides real-time set logging, rich looping 3D exercise demonstrations and  workload-based calorie burnt calculations.
 
 With a cosmic dark design system optimized for OLED mobile displays, Aura works seamlessly on any mobile phone as an installed PWA or on desktop via a centered mobile preview frame.
 
@@ -27,15 +27,15 @@ With a cosmic dark design system optimized for OLED mobile displays, Aura works 
 ## ✨ Key Features
 
 ### 🏋️‍♂️ 1. Active Workout Player
-- **Set-by-Set Logging**: Track target vs. actual reps and weights with one-tap completion toggles..
-- **Workout Completion**: Celebratory confetti animation (`canvas-confetti`) with instant transition to a comprehensive performance summary.
+- **Set-by-Set Logging**: Track actual reps and weights with one-tap completion toggles.
+- **Workout Completion**: Celebratory confetti animation with instant transition to a comprehensive performance summary.
 
 ### 📅 2. Interactive Calendar & Routine Scheduler
 - **Weekly Glance Strip**: Dynamic horizontal date selector showing completion badges, today's indicators, and workout tags.
 - **Month Calendar Modal**: Full monthly view for reviewing past workout consistency, active streaks, and rest days.
 
 ### 🎥 3. High-Definition Exercise Library
-- **3D Looping Video Guides**: Embedded high-resolution demonstration loops for all major lifts and accessory exercises.
+- **3D Looping Video Guides**: Embedded demonstration videos for all major lifts and accessory exercises.
 - **Comprehensive Database**: Exercises cataloged across **Chest**, **Triceps**, **Back**, **Biceps**, **Legs**, **Shoulders**, **Core**, and **Full-Body**.
 - **Detailed Form Coaching**: Step-by-step instructions ("How To"), pro tips, target muscle breakdowns (primary and secondary), and equipment requirements.
 - **Search & Category Filtering**: Instantly search movements or filter by target muscle group.
@@ -49,7 +49,7 @@ With a cosmic dark design system optimized for OLED mobile displays, Aura works 
 - **Attendance Filtering**: Review workout volume and frequency filtered by **This Month**, **Past Month**, or **Lifetime**.
 
 ### 📱 6. Local-First Architecture with Cloud Sync
-- **Instant Offline Access**: Every action writes to `localStorage` immediately for zero latency at the gym, even with poor cellular reception.
+- **Offline-First Persistence**: Completed workouts, routine customizations, and user preferences save to localStorage immediately with background cloud sync, ensuring zero latency even with poor gym reception.
 - **MongoDB Atlas Cloud Sync**: Automatically persists and fetches updates via Next.js server API routes in the background.
 - **Swipe-to-Delete History**: Interactive touch gestures on past workout cards for effortless log cleanup.
 
