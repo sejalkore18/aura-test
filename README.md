@@ -32,11 +32,11 @@ With a cosmic dark design system optimized for OLED mobile displays, Aura works 
 
 ### 📅 2. Interactive Calendar & Routine Scheduler
 - **Weekly Glance Strip**: Dynamic horizontal date selector showing completion badges, today's indicators, and workout tags.
-- **Month Calendar Modal**: Full monthly view for reviewing past workout consistency, active streaks, and rest days.
+- **Month Calendar Modal**: Full monthly view displaying logged workout completion days at a glance.
 
 ### 🎥 3. High-Definition Exercise Library
 - **3D Looping Video Guides**: Embedded demonstration videos for all major lifts and accessory exercises.
-- **Comprehensive Database**: Exercises cataloged across **Chest**, **Triceps**, **Back**, **Biceps**, **Legs**, **Shoulders**, **Core**, and **Full-Body**.
+- **Comprehensive Database**: Exercises cataloged across muscle groups including **Chest**, **Triceps**, **Back**, and **Legs**.
 - **Detailed Form Coaching**: Step-by-step instructions ("How To"), pro tips, target muscle breakdowns (primary and secondary), and equipment requirements.
 - **Search & Category Filtering**: Instantly search movements or filter by target muscle group.
 
@@ -65,7 +65,7 @@ With a cosmic dark design system optimized for OLED mobile displays, Aura works 
 | **Framework** | [Next.js 16 (Turbopack, App Router)](https://nextjs.org/) |
 | **UI Library** | [React 19](https://react.dev/) |
 | **Language** | [TypeScript 5](https://www.typescriptlang.org/) |
-| **Styling** | Modular Vanilla CSS (Design Tokens, Glassmorphism, CSS Modules) |
+| **Styling** | Modular Vanilla CSS (Design Tokens, Responsive Shell) |
 | **Database** | [MongoDB Atlas](https://www.mongodb.com/atlas) with [Mongoose](https://mongoosejs.com/) |
 | **Icons** | [Lucide React](https://lucide.dev/) |
 | **Runtime / Package Manager** | [Bun](https://bun.sh/) / [npm](https://www.npmjs.com/) |
