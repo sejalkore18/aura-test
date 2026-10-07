@@ -20,9 +20,13 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'chest', label: 'Chest' },
-    { id: 'triceps', label: 'Triceps' },
+    { id: 'shoulders', label: 'Shoulders' },
     { id: 'back', label: 'Back' },
+    { id: 'biceps', label: 'Biceps' },
+    { id: 'triceps', label: 'Triceps' },
     { id: 'legs', label: 'Legs' },
+    { id: 'core', label: 'Core' },
+    { id: 'full-body', label: 'Full Body' },
   ];
 
   const filteredExercises = EXERCISE_LIBRARY.filter((ex) => {

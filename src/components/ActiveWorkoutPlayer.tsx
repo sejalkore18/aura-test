@@ -173,6 +173,7 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
       target.closest('input') ||
       target.closest('.weight-pill') ||
       target.closest('.playlist-drawer') ||
+      target.closest('.playlist-dropdown-backdrop') ||
       target.closest('.player-header') ||
       target.closest('.center-content') ||
       target.closest('.sets-row-wrapper') ||
@@ -206,14 +207,58 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
 
       {/* Quick Player Bar */}
       <header className="player-header">
-        <button
-          type="button"
-          className="exercise-progress-badge"
-          onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-          title="View all exercises in routine"
-        >
-          <span>Exercise {exerciseIndex + 1} of {totalExercises}</span>
-        </button>
+        <div className="exercise-progress-wrapper">
+          <button
+            type="button"
+            className="exercise-progress-badge"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPlaylistDrawer((prev) => !prev);
+            }}
+            title="View all exercises in routine"
+          >
+            <span>Exercise {exerciseIndex + 1} of {totalExercises}</span>
+          </button>
+
+          {/* Routine Playlist Dropdown Modal Box */}
+          {showPlaylistDrawer && (
+            <>
+              <div
+                className="playlist-dropdown-backdrop"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPlaylistDrawer(false);
+                }}
+              />
+              <div
+                className="playlist-drawer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="drawer-list">
+                  {routine.exercises.map((item, idx) => {
+                    const isCurrent = idx === exerciseIndex;
+                    const exData = getExerciseById(item.exerciseId);
+                    const exName = exData?.name || item.exerciseId.replace(/-/g, ' ');
+                    return (
+                      <button
+                        key={`${item.exerciseId}-${idx}`}
+                        className={`drawer-item ${isCurrent ? 'current' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectExercise(idx);
+                          setShowPlaylistDrawer(false);
+                        }}
+                      >
+                        <span className="drawer-item-num">{idx + 1}</span>
+                        <span className="drawer-item-name">{exName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="header-right-actions">
           <button
@@ -227,38 +272,6 @@ export const ActiveWorkoutPlayer: React.FC<ActiveWorkoutPlayerProps> = ({
           </button>
         </div>
       </header>
-
-      {/* Routine Playlist Drawer (if opened) */}
-      {showPlaylistDrawer && (
-        <>
-          <div
-            className="drawer-backdrop"
-            onClick={() => setShowPlaylistDrawer(false)}
-          />
-          <div className="playlist-drawer animate-slide-up">
-            <div className="drawer-list">
-            {routine.exercises.map((item, idx) => {
-              const isCurrent = idx === exerciseIndex;
-              const exData = getExerciseById(item.exerciseId);
-              const exName = exData?.name || item.exerciseId.replace(/-/g, ' ');
-              return (
-                <button
-                  key={`${item.exerciseId}-${idx}`}
-                  className={`drawer-item ${isCurrent ? 'current' : ''}`}
-                  onClick={() => {
-                    onSelectExercise(idx);
-                    setShowPlaylistDrawer(false);
-                  }}
-                >
-                  <span className="drawer-item-num">{idx + 1}</span>
-                  <span className="drawer-item-name">{exName}</span>
-                </button>
-              );
-            })}
-            </div>
-          </div>
-        </>
-      )}
 
       {/* Center Rep Counter Section (Matching Left Screen of Reference) */}
       <div className="center-content">
