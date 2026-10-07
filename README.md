@@ -12,15 +12,32 @@
   <img src="https://img.shields.io/badge/TypeScript-5.x-3178c6?style=for-the-badge&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb" alt="MongoDB" />
   <img src="https://img.shields.io/badge/PWA-Ready-f05032?style=for-the-badge&logo=pwa" alt="PWA Ready" />
+  <a href="https://youtu.be/HNv0yyeTb9E"><img src="https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube" alt="YouTube Demo" /></a>
 </p>
 
 ---
 
 ## 📖 Overview
 
-**Aura** is a modern, high-performance fitness PWA designed to replace clunky gym notebooks and ad-cluttered tracking apps. Inspired by sleek mobile experiences, Aura provides real-time set logging, rich looping 3D exercise demonstrations and  workload-based calorie burnt calculations.
+**Aura** is a modern, high-performance fitness PWA designed to replace clunky gym notebooks and ad-cluttered tracking apps. Inspired by sleek mobile experiences, Aura provides real-time set logging, rich looping 3D exercise demonstrations and workload-based calorie burnt calculations.
 
 With a cosmic dark design system optimized for OLED mobile displays, Aura works seamlessly on any mobile phone as an installed PWA or on desktop via a centered mobile preview frame.
+
+---
+
+## 🎬 Video Demo
+
+Watch the walkthrough of Aura in action:
+
+<p align="center">
+  <a href="https://youtu.be/HNv0yyeTb9E" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.youtube.com/vi/HNv0yyeTb9E/maxresdefault.jpg" alt="Aura Demo Video" width="100%" style="max-width: 720px; border-radius: 12px;" />
+  </a>
+</p>
+
+<p align="center">
+  ▶️ <strong><a href="https://youtu.be/HNv0yyeTb9E" target="_blank" rel="noopener noreferrer">Watch the full demo on YouTube</a></strong>
+</p>
 
 ---
 
