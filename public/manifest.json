@@ -1,6 +1,6 @@
 {
-  "name": "Aura Fitness",
-  "short_name": "Aura",
+  "name": "Aura Test",
+  "short_name": "Aura Test",
   "description": "Smart gym workout tracker with real exercise videos, sets, reps, and rest timers.",
   "start_url": "/",
   "display": "standalone",

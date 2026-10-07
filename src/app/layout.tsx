@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   keywords: ['fitness tracker', 'gym workout', 'sets and reps', 'chest press', 'push day', 'workout routine'],
   authors: [{ name: 'Aura Fitness' }],
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Aura Test',
+  },
   icons: {
     icon: [
       { url: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' },
